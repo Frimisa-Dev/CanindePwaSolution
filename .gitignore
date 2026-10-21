@@ -88,3 +88,22 @@ yarn-error.log*
 # ===== Arquivos de projeto que não devem ser versionados =====
 Estrutura
 *.userprefs
+
+
+
+# ===== Scripts de setup com segredos (NÃO SUBIR) =====
+PowerShell/Setup-*.ps1
+PowerShell/*Variaveis*.ps1
+PowerShell/Start-*.ps1
+PowerShell/Deploy-*.ps1
+PowerShell/Publish-*.ps1
+PowerShell/Test-*.ps1
+PowerShell/_Executar-*.ps1
+PowerShell/Criar-*.ps1
+PowerShell/*Infra*.txt
+
+# ===== Docs internos e temporários =====
+*.pdf
+diff-temp.txt
+ProjetoGeral.txt
+EstruturaFrontend
