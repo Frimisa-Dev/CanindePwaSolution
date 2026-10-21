@@ -1,0 +1,17 @@
+﻿@inject NavigationManager NavigationManager
+
+<PageTitle>Redirecionando - AA Frimisa</PageTitle>
+
+<div class="curio-min-vh-100 curio-bg-gradient-home curio-d-flex curio-align-center curio-justify-center">
+    <div class="curio-text-center">
+        <div class="curio-spinner-modern curio-mb-3"></div>
+        <p class="curio-text-white">Redirecionando para login...</p>
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        NavigationManager.NavigateTo("/login", forceLoad: true);
+    }
+}

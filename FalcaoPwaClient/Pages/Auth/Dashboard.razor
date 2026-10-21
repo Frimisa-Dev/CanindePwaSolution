@@ -1,0 +1,107 @@
+@page "/dashboard"
+@attribute [Authorize(Policy = "RequireActiveUser")]
+[Authorize(Policy = "DashboardAccess")]
+@layout DashboardLayout
+
+@using FalcaoPwaShared.Models.Dtos.UserDto
+@using FalcaoPwaShared.Models.Dtos.AuthDto
+
+<PageTitle>Dashboard - AA Frimisa</PageTitle>
+
+@* Sidebar já está no MainLayout *@
+<div class="curio-container-fluid">
+    <div class="curio-card">
+        <div class="curio-card-body curio-p-5">
+            <div class="curio-text-center curio-mb-5">
+                <h1 class="curio-card-title">Dashboard</h1>
+                <p class="curio-card-description">
+                    Painel de controle do sistema
+                </p>
+            </div>
+
+            <div class="curio-card curio-p-4 curio-mb-5"
+                 style="background-color: var(--curio-gray-50);">
+
+                <div class="curio-d-flex curio-align-center curio-mb-3">
+                    <div class="curio-me-3"
+                         style="background-color: var(--curio-primary);
+                                color: white;
+                                border-radius: 50%;
+                                width: 56px;
+                                height: 56px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;">
+                        <span style="font-size: 1.5rem;">👤</span>
+                    </div>
+
+                    <div>
+                        <h4 class="curio-mb-1">
+                            Bem-vindo, @CurrentUser?.Username!
+                        </h4>
+                        <p class="curio-text-muted curio-mb-0">
+                            @CurrentUser?.Email
+                        </p>
+                    </div>
+
+                    <div class="curio-ms-auto">
+                        <span class="curio-p-2"
+                              style="background-color: var(--curio-success);
+                                     color: white;
+                                     border-radius: var(--curio-border-radius);">
+                            @CurrentUser?.TipoUsuario
+                        </span>
+                    </div>
+                </div>
+
+                <div class="curio-row">
+                    <div class="curio-col-md-6">
+                        <strong>Último acesso:</strong>
+                        <div>
+                            @(CurrentUser?.LastLoginAt?.ToString("dd/MM/yyyy HH:mm") ?? "Primeiro acesso")
+                        </div>
+                    </div>
+                    <div class="curio-col-md-6">
+                        <strong>Status:</strong>
+                        <div>
+                            @(CurrentUser?.IsActive == true ? "Ativo" : "Inativo")
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Conteúdo específico do Dashboard *@
+            <div class="curio-row">
+                <div class="curio-col-md-4">
+                    <div class="curio-card curio-text-center curio-p-4">
+                        <i class="bi bi-people curio-fs-1 curio-text-primary curio-mb-3"></i>
+                        <h5>Total de Usuários</h5>
+                        <p class="curio-fs-2 curio-fw-bold">--</p>
+                    </div>
+                </div>
+                <div class="curio-col-md-4">
+                    <div class="curio-card curio-text-center curio-p-4">
+                        <i class="bi bi-cart curio-fs-1 curio-text-success curio-mb-3"></i>
+                        <h5>marcas Cadastradas</h5>
+                        <p class="curio-fs-2 curio-fw-bold">--</p>
+                    </div>
+                </div>
+                <div class="curio-col-md-4">
+                    <div class="curio-card curio-text-center curio-p-4">
+                        <i class="bi bi-currency-dollar curio-fs-1 curio-text-warning curio-mb-3"></i>
+                        <h5>Relatório Geral</h5>
+                        <p class="curio-fs-2 curio-fw-bold">--</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter(Name = "CurrentUser")]
+    private UserProfileDto? CurrentUser { get; set; }
+
+    [CascadingParameter(Name = "CurrentMenus")]
+    private List<MenuItemDto>? CurrentMenus { get; set; }
+}

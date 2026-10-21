@@ -1,0 +1,69 @@
+@* Components/Mensagens/MensagemPadrao.razor *@
+@using FalcaoPwaShared.Enums
+
+@if (isVisible)
+{
+    <div class="@AlertClass">
+        <span class="curio-alert-icon">
+            <i class="@AlertIcon"></i>
+        </span>
+        <span class="curio-alert-text">@Texto</span>
+    </div>
+}
+
+@code {
+    [Parameter] public string Texto { get; set; } = string.Empty;
+    [Parameter] public TipoMensagemEnum Tipo { get; set; } = TipoMensagemEnum.Info;
+
+    // NOVO (opcional)
+    [Parameter] public int? AutoCloseSeconds { get; set; }
+
+    private bool isVisible;
+    private CancellationTokenSource? _cts;
+
+    protected override void OnParametersSet()
+    {
+        _cts?.Cancel();
+        _cts = null;
+
+        isVisible = !string.IsNullOrWhiteSpace(Texto);
+
+        if (isVisible && AutoCloseSeconds.HasValue)
+        {
+            _cts = new CancellationTokenSource();
+            _ = AutoCloseAsync(_cts.Token);
+        }
+    }
+
+    private async Task AutoCloseAsync(CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(AutoCloseSeconds!.Value), token);
+            isVisible = false;
+            StateHasChanged();
+        }
+        catch (TaskCanceledException)
+        {
+            // esperado, não faz nada
+        }
+    }
+
+    private string AlertClass => Tipo switch
+    {
+        TipoMensagemEnum.Sucesso => "curio-alert curio-alert--success",
+        TipoMensagemEnum.Erro => "curio-alert curio-alert--error",
+        TipoMensagemEnum.Aviso => "curio-alert curio-alert--warning",
+        TipoMensagemEnum.Info => "curio-alert curio-alert--info",
+        _ => "curio-alert curio-alert--info"
+    };
+
+    private string AlertIcon => Tipo switch
+    {
+        TipoMensagemEnum.Sucesso => "bi bi-check-circle-fill",
+        TipoMensagemEnum.Erro => "bi bi-x-circle-fill",
+        TipoMensagemEnum.Aviso => "bi bi-exclamation-triangle-fill",
+        TipoMensagemEnum.Info => "bi bi-info-circle-fill",
+        _ => "bi bi-info-circle-fill"
+    };
+}

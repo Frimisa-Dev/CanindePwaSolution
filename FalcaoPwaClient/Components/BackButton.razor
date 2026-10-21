@@ -1,0 +1,55 @@
+﻿@* Components/BackButton.razor - COMPONENTE CORRIGIDO *@
+
+<button class="curio-btn-back curio-d-flex curio-align-center curio-justify-center curio-gap-2"
+        @onclick="HandleBackClick" 
+        disabled="@IsLoading">
+    @if (IsLoading)
+    {
+        <span class="curio-spinner-sm curio-border-2"></span>
+        <span>Carregando...</span>
+    }
+    else
+    {
+        <i class="bi bi-arrow-left"></i>
+        <span>@ButtonText</span>
+    }
+</button>
+
+@code {
+    [Parameter]
+    public string ButtonText { get; set; } = "Voltar";
+    
+    [Parameter]
+    public string? CustomRoute { get; set; }
+    
+    [Parameter]
+    public bool UseHistory { get; set; } = true;
+    
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+    
+    private bool IsLoading { get; set; }
+    
+    private async Task HandleBackClick()
+    {
+        IsLoading = true;
+        StateHasChanged(); // Força renderização imediata
+        
+        try
+        {
+            await Task.Delay(50); // Pequeno delay para feedback visual
+            
+            if (!string.IsNullOrEmpty(CustomRoute))
+            {
+                Navigation.NavigateTo(CustomRoute);
+            }
+            else
+            {
+                Navigation.NavigateTo("/");
+            }
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+}

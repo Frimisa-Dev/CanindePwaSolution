@@ -1,0 +1,212 @@
+@page "/login"
+@attribute [AllowAnonymous]
+
+@using System.ComponentModel.DataAnnotations
+@using System.Net
+@using FalcaoPwaShared.Models.Dtos.AuthDto
+@using FalcaoPwaShared.Enums
+
+@inject NavigationManager Navigation
+@inject AuthManager AuthManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>AA Frimisa - Login</PageTitle>
+
+<div class="curio-min-vh-100 curio-bg-gradient-home">
+    <div class="curio-container">
+        <div class="curio-row curio-justify-center curio-align-center curio-min-vh-100">
+            <div class="curio-col-12 curio-col-md-8 curio-col-lg-6 curio-col-xl-5">
+                <div class="curio-card curio-shadow-lg">
+                    <div class="curio-card-body curio-p-5">
+
+                        <!-- LOGO -->
+                        <div class="curio-text-center curio-mb-4">
+                            <img src="/images/logo.png"
+                                 alt="AA Frimisa"
+                                 class="curio-logo-image curio-mb-3"
+                                 @onerror="HandleImageError" />
+
+                            @if (showLogoPlaceholder)
+                            {
+                                <div class="curio-logo-placeholder">
+                                    <i class="bi bi-shield-lock"></i>
+                                    <div>
+                                        <strong>AA Frimisa</strong>
+                                        <small>Causas Nobres</small>
+                                    </div>
+                                </div>
+                            }
+
+                            <h2 class="curio-card-title curio-mb-2">Acessar Sistema</h2>
+                            <p class="curio-text-muted curio-fs-sm">
+                                Digite suas credenciais para continuar
+                            </p>
+                        </div>
+
+                        <!-- FORM -->
+                        <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+                            <DataAnnotationsValidator />
+
+                            <!-- Campo Email -->
+                            <div class="curio-text-center curio-mb-3">
+                                <div class="curio-d-inline-block curio-text-left curio-mw-400">
+                                    <label class="curio-form-label curio-fw-medium curio-d-block curio-mb-2">
+                                        E-mail
+                                    </label>
+                                    <InputText class="curio-form-control"
+                                               @bind-Value="loginModel.Email"
+                                               autocomplete="username"
+                                               placeholder="seu@email.com" />
+                                    <ValidationMessage For="@(() => loginModel.Email)" 
+                                                       class="curio-d-block curio-mt-1" />
+                                </div>
+                            </div>
+
+                            <!-- Campo Senha -->
+                            <div class="curio-text-center curio-mb-4">
+                                <div class="curio-d-inline-block curio-text-left curio-mw-400">
+                                    <label class="curio-form-label curio-fw-medium curio-d-block curio-mb-2">
+                                        Senha
+                                    </label>
+                                    <InputText type="password"
+                                               class="curio-form-control"
+                                               @bind-Value="loginModel.Password"
+                                               autocomplete="current-password"
+                                               placeholder="••••••" />
+                                    <ValidationMessage For="@(() => loginModel.Password)" 
+                                                       class="curio-d-block curio-mt-1" />
+                                </div>
+                            </div>
+
+                            <!-- Mensagem de Erro -->
+                            @if (!string.IsNullOrWhiteSpace(errorMessage))
+                            {
+                                <div class="curio-d-block curio-mx-auto curio-mw-400 curio-mb-3">
+                                    <MensagemPadrao Texto="@errorMessage"
+                                                   Tipo="TipoMensagemEnum.Erro"
+                                                   AutoCloseSeconds="4" />
+                                </div>
+                            }
+
+                            <!-- Botão de Login -->
+                            <div class="curio-text-center curio-mt-4">
+                                <button class="curio-btn curio-btn-primary curio-btn-lg curio-w-100"
+                                        type="submit"
+                                        disabled="@isLoading">
+                                    @if (isLoading)
+                                    {
+                                        <span class="curio-spinner-sm curio-border-2 curio-me-2"></span>
+                                        <span>Autenticando...</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-lock-fill curio-me-2"></i>
+                                        <span>Entrar no Sistema</span>
+                                    }
+                                </button>
+                            </div>
+                        </EditForm>
+
+                        <!-- Link Esqueci Senha -->
+                        <div class="curio-text-center curio-mt-4">
+                            <a href="/recuperar-acesso" 
+                               class="curio-text-primary curio-text-decoration-none">
+                                Esqueceu sua senha?
+                            </a>
+                        </div>
+
+                        <!-- Botão Voltar -->
+                        <div class="curio-mt-4 curio-mx-auto curio-mw-400">
+                            <BackButton ButtonText="Voltar ao Início" />
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginModel loginModel = new();
+    private bool isLoading;
+    private string? errorMessage;
+    private bool showLogoPlaceholder;
+
+    private async Task HandleLogin()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var result = await AuthManager.LoginAsync(new LoginDto
+            {
+                Email = loginModel.Email.Trim(),
+                Password = loginModel.Password
+            });
+
+            // LOGIN OK SEM PIN
+            if (result.Success && !result.RequiresPin)
+            {
+                Navigation.NavigateTo("/dashboard", true);
+                return;
+            }
+
+            // LOGIN OK MAS EXIGE PIN
+            if (result.Success && result.RequiresPin)
+            {
+                // Forçar atualização do estado de autenticação
+                if (AuthenticationStateProvider is CookieAuthStateProvider provider)
+                {
+                    await provider.ForceServerValidationAsync();
+                }
+    
+                // Pequeno delay para sincronização
+                await Task.Delay(100);
+    
+                Navigation.NavigateTo("/validarpin");
+            }
+
+            // ERROS - MENSAGEM PADRÃO SEGURANÇA
+            errorMessage = "Credenciais inválidas.";
+        }
+        catch (HttpRequestException httpEx) when (httpEx.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            // 401 é resposta normal da API para credenciais inválidas
+            errorMessage = "Credenciais inválidas.";
+        }
+        catch (HttpRequestException)
+        {
+            // Outros erros HTTP (timeout, servidor offline, etc)
+            errorMessage = "Erro de conexão com o sistema. Verifique sua internet.";
+        }
+        catch (Exception)
+        {
+            errorMessage = "Erro inesperado no sistema.";
+        }
+        finally
+        {
+            isLoading = false;
+            
+            // PADRÃO PROFISSIONAL: Limpa senha após erro
+            if (!string.IsNullOrEmpty(errorMessage))
+            {
+                loginModel.Password = string.Empty;
+            }
+        }
+    }
+
+    private void HandleImageError() => showLogoPlaceholder = true;
+
+    public class LoginModel
+    {
+        [Required(ErrorMessage = "E-mail é obrigatório")]
+        [EmailAddress(ErrorMessage = "Digite um e-mail válido")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Senha é obrigatória")]
+        [MinLength(6, ErrorMessage = "Senha deve ter no mínimo 6 caracteres")]
+        public string Password { get; set; } = string.Empty;
+    }
+}

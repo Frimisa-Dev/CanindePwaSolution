@@ -1,0 +1,90 @@
+# ============================================================================
+# .gitignore para FalcaoPwaSolution
+# ============================================================================
+
+# ===== Build (.NET) =====
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+[Pp]ublish/
+*.dll
+*.exe
+*.pdb
+*.cache
+*.tlog
+*.log
+startup-crash.log
+build_log.txt
+
+# ===== Visual Studio =====
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.slnLaunch.user
+*.csproj.user
+*.csproj.backup
+*.backup
+*.vsidx
+*.dtbcache.v2
+*.futdcache.v2
+
+# ===== Pacotes =====
+[Pp]ackages/
+*.nupkg
+*.nuget.cache
+
+# ===== Testes =====
+[Tt]est[Rr]esult*/
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+
+# ===== Sistema operacional =====
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# ===== Certificados (NUNCA SUBIR) =====
+*.pfx
+*.p12
+*.cer
+*.key
+*.pem
+*.crt
+
+# ===== Configurações locais com segredos (NUNCA SUBIR) =====
+appsettings.Development.json
+appsettings.Local.json
+appsettings.Production.json
+*.local.json
+*.secrets.json
+
+# ===== Cookies / sessões =====
+cookies.txt
+*.cookies
+
+# ===== Backups e temporários =====
+*.bak
+*.tmp
+*.zip
+*.rar
+*.7z
+
+# ===== Logs de erro locais =====
+erroClient
+erroServer
+
+# ===== Node.js (caso a Frontend tenha) =====
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# ===== Arquivos de projeto que não devem ser versionados =====
+Estrutura
+*.userprefs

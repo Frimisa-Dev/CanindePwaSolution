@@ -1,0 +1,167 @@
+﻿@page "/"
+@inject NavigationManager Navigation
+
+<PageTitle>AA Frimisa - Sistema de Gestão</PageTitle>
+
+<div class="curio-min-vh-100 curio-bg-gradient-home">
+
+    <!-- HEADER -->
+    <div class="curio-container curio-py-4">
+        <div class="curio-row curio-align-center">
+            <div class="curio-col curio-text-center">
+                <h1 class="curio-brand-title curio-mb-1">AA Frimisa</h1>
+                <p class="curio-brand-subtitle curio-mb-0">Sistema Corporativo</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <div class="curio-home-center">
+        <div class="curio-container">
+            <div class="curio-row curio-justify-center">
+                <div class="curio-col-md-8 curio-col-lg-6">
+                    <div class="curio-card">
+                        <div class="curio-card-body curio-text-center curio-p-5">
+
+                            <!-- LOGO -->
+                            <div class="curio-mb-4">
+                                <img src="/images/logo.png"
+                                     alt="AA Frimisa"
+                                     class="curio-logo-image"
+                                     @onerror="HandleImageError">
+
+                                @if (showLogoPlaceholder)
+                                {
+                                    <div class="curio-logo-placeholder">
+                                        <i class="bi bi-shield-lock curio-placeholder-icon"></i>
+                                        <div class="curio-placeholder-text">
+                                            <strong>AA Frimisa</strong>
+                                            <small>Sempre Uma Boa Causa</small>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- TÍTULO -->
+                            <h2 class="curio-card-title curio-mb-3">Sistema de Gestão</h2>
+
+                            <!-- DESCRIÇÃO -->
+                            <p class="curio-card-description curio-mb-4">
+                                Gestão da Associação Atlética Frimisa
+                            </p>
+
+                            <!-- BOTÕES -->
+                            @if (isCheckingAuth)
+                            {
+                                <div class="curio-loading-state">
+                                    <div class="curio-spinner-modern"></div>
+                                    <p class="curio-mt-3">Carregando...</p>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="curio-action-buttons">
+                                    <button class="curio-btn curio-btn-primary curio-btn-lg curio-w-100 curio-mb-3 curio-d-flex curio-align-center curio-justify-center curio-gap-2"
+                                            @onclick="GoToLogin">
+                                        <i class="bi bi-box-arrow-in-right"></i>
+                                        <span>Acessar Sistema</span>
+                                    </button>
+
+                                    <button class="curio-btn curio-btn-secondary curio-btn-lg curio-w-100 curio-mb-3 curio-d-flex curio-align-center curio-justify-center curio-gap-2"
+                                            @onclick="GoToRecuperarAcesso">
+                                        <i class="bi bi-key"></i>
+                                        <span>Recuperar Acesso</span>
+                                    </button>
+
+                                    <button class="curio-btn curio-btn-info curio-btn-lg curio-w-100 curio-d-flex curio-align-center curio-justify-center curio-gap-2"
+                                            @onclick="ShowAbout">
+                                        <i class="bi bi-info-circle"></i>
+                                        <span>Sobre o Sistema</span>
+                                    </button>
+                                </div>
+                            }
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="curio-container curio-py-4 curio-footer">
+        <div class="curio-text-center">
+            <p class="curio-footer-text">
+                © 2026 AA Frimisa - Sistema de Gestão marcas
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL SOBRE -->
+@if (showAboutModal)
+{
+    <div class="curio-modal-backdrop"></div>
+    <div class="curio-modal" tabindex="-1">
+        <div class="curio-modal-dialog">
+            <div class="curio-modal-content">
+
+                <div class="curio-modal-header">
+                    <h5 class="curio-modal-title">Sobre o Sistema</h5>
+                    <button type="button" class="curio-btn curio-btn-secondary" @onclick="HideAbout">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+
+                <div class="curio-modal-body">
+                    <div class="curio-text-center curio-p-4">
+                        <!-- IMAGEM CORRIGIDA -->
+                        <img src="/images/marca.png" 
+                             alt="AA Frimisa"
+                             class="curio-logo-image curio-mb-3">
+                        
+                        <h6 class="curio-mb-3">Sistema AA Frimisa</h6>
+
+                        <p class="curio-mb-3">
+                            Plataforma corporativa para gestão completa de marcas,
+                            com objetivos sociais.
+                        </p>
+
+                        <div class="curio-card curio-p-3">
+                            <strong>Desenvolvido por:</strong><br />
+                            Eduardo<br />
+                            <i class="bi bi-whatsapp"></i> (31) 99173-7533
+                        </div>
+                    </div>
+                </div>
+
+                <div class="curio-modal-footer">
+                    <button type="button" class="curio-btn curio-btn-primary" @onclick="HideAbout">
+                        Fechar
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isCheckingAuth = true;
+    private bool showAboutModal;
+    private bool showLogoPlaceholder;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(300);
+        isCheckingAuth = false;
+    }
+
+    private void HandleImageError() => showLogoPlaceholder = true;
+
+    private void GoToLogin() => Navigation.NavigateTo("/login");
+    private void GoToRecuperarAcesso() => Navigation.NavigateTo("/recuperaracesso");
+
+    private void ShowAbout() => showAboutModal = true;
+    private void HideAbout() => showAboutModal = false;
+}

@@ -1,0 +1,129 @@
+# =================================================================================================
+# CURIO - SCRIPT DE CONFIGURAÇÃO LOCAL (DEVELOPMENT)
+# -------------------------------------------------------------------------------------------------
+# Objetivo:
+#   - Limpar todas variáveis do prefixo CURIO__ de Machine, User e Process
+#   - Configurar ambiente bancário com HTTPS usando certificado LocalMachine\My
+#   - Padronizar todas as configurações da aplicação Curio
+#
+# Segurança:
+#   - Exclusivamente variáveis CURIO__
+#   - Nenhuma variável ASPNETCORE_ é usada, evitando impacto em outros projetos
+#   - Script seguro para execução local
+#
+# Certificado:
+#   - LocalMachine\My\9E9A997CAA52B3D13CA457D5631492C90F1670B3
+#
+# Auditoria:
+#   - Revisado linha a linha (nível Sênior)
+#   - Sem caracteres invisíveis, sem aspa solta, sem pipes quebrados
+# =================================================================================================
+
+Write-Host "=== LIMPEZA COMPLETA DAS VARIAVEIS CURIO__ (LOCAL) ===" -ForegroundColor Yellow
+
+$prefix = "CURIO__"
+
+# =====================================================================================
+# REMOÇÃO DE VARIÁVEIS DE AMBIENTE EXISTENTES
+# =====================================================================================
+
+# Remove variáveis no escopo MACHINE
+[Environment]::GetEnvironmentVariables("Machine").Keys |
+    Where-Object { $_ -like "$prefix*" } |
+    ForEach-Object {
+        [Environment]::SetEnvironmentVariable($_, $null, "Machine")
+        Write-Host "Removida (Machine): $_"
+    }
+
+# Remove variáveis no escopo USER
+[Environment]::GetEnvironmentVariables("User").Keys |
+    Where-Object { $_ -like "$prefix*" } |
+    ForEach-Object {
+        [Environment]::SetEnvironmentVariable($_, $null, "User")
+        Write-Host "Removida (User): $_"
+    }
+
+# Remove variáveis no escopo PROCESS (sessão atual)
+Get-ChildItem Env: |
+    Where-Object { $_.Name -like "$prefix*" } |
+    ForEach-Object {
+        Remove-Item Env:\$($_.Name) -ErrorAction SilentlyContinue
+        Write-Host "Removida (Process): $($_.Name)"
+    }
+
+Write-Host "=== LIMPEZA FINALIZADA ===" -ForegroundColor Green
+Write-Host "Configurando ambiente LOCAL (Development)..." -ForegroundColor Cyan
+
+# =====================================================================================
+# CONFIGURAÇÃO DO SERVIDOR LOCAL (HTTPS com certificado LocalMachine\My)
+# =====================================================================================
+
+setx CURIO__SERVER__HttpPort "5099" /M
+setx CURIO__SERVER__HttpsPort "7199" /M
+setx CURIO__SERVER__UseHttps "true" /M
+setx CURIO__SERVER__UseHttpsRedirection "true" /M
+setx CURIO__SERVER__CertificateThumbprint "9E9A997CAA52B3D13CA457D5631492C90F1670B3" /M
+setx CURIO__SERVER__CertificateStoreLocation "LocalMachine" /M
+
+# =====================================================================================
+# BANCO DE DADOS
+# =====================================================================================
+
+setx CURIO__DB__DefaultConnection "server=localhost;database=curio;user=curioWeb;password=CurioWeb@9173;port=3306;" /M
+
+# =====================================================================================
+# JWT / AUTENTICAÇÃO
+# =====================================================================================
+
+setx CURIO__JWT__Key "Curio@SecureKey2024!FullStackEnterprise#" /M
+setx CURIO__JWT__Issuer "CurioWebServer" /M
+setx CURIO__JWT__Audience "CurioPwaClient" /M
+setx CURIO__JWT__AccessTokenMinutes "15" /M
+setx CURIO__JWT__RefreshTokenDays "14" /M
+
+# =====================================================================================
+# EMAIL
+# =====================================================================================
+
+setx CURIO__EMAIL__HOST "mail.bwmnegocios.com.br" /M
+setx CURIO__EMAIL__PORT "587" /M
+setx CURIO__EMAIL__USER "logistica@bwmnegocios.com.br" /M
+setx CURIO__EMAIL__PASSWORD "Logistica.BWM@456" /M
+setx CURIO__EMAIL__FROM "logistica@bwmnegocios.com.br" /M
+setx CURIO__EMAIL__USESSL "false" /M
+setx CURIO__EMAIL__USESTARTTLS "true" /M
+
+# =====================================================================================
+# APP
+# =====================================================================================
+
+# BaseUrl deve usar HTTPS em dev (evita falha em SameSite=None para cookies seguros)
+setx CURIO__APP__BaseUrl "https://localhost:7199" /M
+setx CURIO__APP__EnableSwagger "true" /M
+
+# =====================================================================================
+# CONFIGURAÇÃO DO ADMINISTRADOR (FIRST SEED)
+# =====================================================================================
+
+setx CURIO__ADMIN__ENABLED "true" /M
+setx CURIO__ADMIN__EMAIL "admin@curio.com" /M
+setx CURIO__ADMIN__USERNAME "admin" /M
+setx CURIO__ADMIN__PASSWORD "Admin@123456" /M
+setx CURIO__ADMIN__TIPOUSUARIO "Ceo" /M
+
+# =====================================================================================
+# RELATÓRIO FINAL
+# =====================================================================================
+
+Write-Host ""
+Write-Host "✔ Ambiente LOCAL configurado com sucesso." -ForegroundColor Green
+Write-Host ""
+
+Write-Host "=== VARIÁVEIS ATIVAS ==="
+Get-ChildItem Env: |
+    Where-Object { $_.Name -like "CURIO__*" } |
+    Sort-Object Name |
+    Format-Table Name, Value -AutoSize
+
+Write-Host ""
+Write-Host "=== FIM ===" -ForegroundColor Green

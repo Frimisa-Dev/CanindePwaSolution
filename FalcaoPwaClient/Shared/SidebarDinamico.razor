@@ -1,0 +1,83 @@
+@* SidebarDinamico.razor - COMPONENTE VISUAL PURAMENTE *@
+@using FalcaoPwaShared.Models.Dtos.AuthDto
+@using FalcaoPwaShared.Models.Dtos.UserDto
+
+<div class="curio-nav-scrollable">
+    <!-- Cabeçalho -->
+    <div class="curio-sidebar-header curio-p-4">
+        <div class="curio-brand">
+            <h1 class="curio-brand-title">CURIO</h1>
+            <p class="curio-brand-subtitle">AA Frimisa</p>
+
+            @if (Usuario != null)
+            {
+                <div class="curio-user-info curio-mt-3">
+                    <p class="curio-text-white-50 curio-mb-1">
+                        <i class="bi bi-person-circle curio-me-1"></i>
+                        @Usuario.Username
+                    </p>
+                    <small class="curio-text-muted">
+                        @Usuario.TipoUsuario
+                    </small>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- MENU -->
+    <nav class="curio-flex-column curio-p-3">
+        @if (Menus == null)
+        {
+            <div class="curio-alert curio-alert--info">
+                <p>Carregando menu...</p>
+            </div>
+        }
+        else if (!Menus.Any())
+        {
+            <div class="curio-alert curio-alert--warning">
+                <p>Nenhum menu configurado para este perfil</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var menu in Menus.Where(m => m.Ativo).OrderBy(m => m.Ordem))
+            {
+                <div class="curio-nav-item">
+                    <NavLink class="curio-nav-link"
+                             href="@menu.Caminho"
+                             Match="NavLinkMatch.Prefix">
+                        <span class="curio-nav-icon">
+                            <i class="@menu.Icone"></i>
+                        </span>
+                        @menu.Nome
+                    </NavLink>
+                </div>
+            }
+        }
+    </nav>
+
+    <!-- FOOTER -->
+    <div class="curio-sidebar-footer curio-p-3 curio-mt-auto">
+        <button class="curio-btn curio-btn--secondary curio-btn--block"
+                @onclick="HandleLogout">
+            <i class="bi bi-box-arrow-right curio-me-1"></i>
+            Sair
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public UserProfileDto? Usuario { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<MenuItemDto>? Menus { get; set; }
+
+    [Parameter]
+    public EventCallback OnLogout { get; set; }
+
+    private async Task HandleLogout()
+    {
+        await OnLogout.InvokeAsync();
+    }
+}

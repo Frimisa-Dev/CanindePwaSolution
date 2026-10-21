@@ -1,0 +1,213 @@
+@page "/cadastrarusuario"
+@attribute [Authorize(Policy = "RequireActiveUser")]
+[Authorize(Policy = "Ceo")]
+
+@using FalcaoPwaClient.Components
+@using FalcaoPwaShared.Models.Dtos.AuthDto
+@using FalcaoPwaShared.Enums
+@using System.ComponentModel.DataAnnotations
+
+@inject AuthManager AuthManager
+@inject NavigationManager NavigationManager
+
+<PageTitle>AA Frimisa - Cadastrar Usuário</PageTitle>
+
+<div class="curio-min-vh-100 curio-bg-gradient-home">
+    <div class="curio-container">
+        <div class="curio-row curio-justify-center curio-align-center curio-min-vh-100">
+            <div class="curio-col-md-8 curio-col-lg-6 curio-col-xl-5">
+                <div class="curio-card">
+                    <div class="curio-card-body curio-p-5">
+
+                        <!-- LOGO -->
+                        <div class="curio-text-center curio-mb-4">
+                            <img src="/images/logo.png"
+                                 alt="AA Frimisa
+                                 class="curio-logo-image curio-mb-3"
+                                 @onerror="HandleImageError" />
+
+                            @if (showLogoPlaceholder)
+                            {
+                                <div class="curio-logo-placeholder">
+                                    <strong>Cadastrar Usuário</strong>
+                                    <small>AA Frimisa</small>
+                                </div>
+                            }
+
+                            <h2 class="curio-card-title">Cadastrar Novo Usuário</h2>
+                            <p class="curio-card-description">
+                                Preencha os dados para criar uma conta
+                            </p>
+                        </div>
+
+                        <!-- FORM -->
+                        <EditForm EditContext="editContext" OnValidSubmit="HandleCadastroUsuario">
+                            <DataAnnotationsValidator />
+
+                            <div class="curio-form-group curio-mb-3">
+                                <label class="curio-form-label">Nome de Usuário</label>
+                                <InputText class="@CssInput(nameof(model.Username))"
+                                           @bind-Value="model.Username" />
+                                <ValidationMessage For="@(() => model.Username)" />
+                            </div>
+
+                            <div class="curio-form-group curio-mb-3">
+                                <label class="curio-form-label">E-mail</label>
+                                <InputText class="@CssInput(nameof(model.Email))"
+                                           @bind-Value="model.Email" />
+                                <ValidationMessage For="@(() => model.Email)" />
+                            </div>
+
+                            <div class="curio-form-group curio-mb-3">
+                                <label class="curio-form-label">Senha</label>
+                                <InputText type="password"
+                                           class="@CssInput(nameof(model.Password))"
+                                           @bind-Value="model.Password" />
+                                <ValidationMessage For="@(() => model.Password)" />
+                            </div>
+
+                            <div class="curio-form-group curio-mb-3">
+                                <label class="curio-form-label">Confirmar Senha</label>
+                                <InputText type="password"
+                                           class="@CssInput(nameof(model.ConfirmPassword))"
+                                           @bind-Value="model.ConfirmPassword" />
+                                <ValidationMessage For="@(() => model.ConfirmPassword)" />
+                            </div>
+
+                            <div class="curio-form-group curio-mb-4">
+                                <label class="curio-form-label">Tipo de Usuãrio</label>
+                                <select class="@CssInput(nameof(model.TipoUsuario))"
+                                        @bind="model.TipoUsuario">
+                                    @foreach (var tipo in Enum.GetValues<UsuarioEnum>())
+                                    {
+                                        <option value="@tipo">@tipo</option>
+                                    }
+                                </select>
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(message))
+                            {
+                                <MensagemPadrao Texto="@message"
+                                                 Tipo="@(isSuccess ? TipoMensagemEnum.Sucesso : TipoMensagemEnum.Erro)"
+                                                 AutoCloseSeconds="5" />
+                            }
+
+                            <button class="curio-btn curio-btn--primary curio-btn-lg w-100"
+                                    type="submit"
+                                    disabled="@isProcessing">
+                                @if (isProcessing)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2">Registrando...</span>                                    
+                                }
+                                else
+                                {
+                                <span class="spinner-border spinner-border-sm me-2">Cadastrar Usuário</span>
+                                }
+                            </button>
+                        </EditForm>
+
+                        <div class="curio-mt-3">
+                             <BackButton ButtonText="Voltar ao Dashboard" CustomRoute="/dashboard" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private CadastroUsuarioDto model = new()
+    {
+        Username = string.Empty,
+        Email = string.Empty,
+        Password = string.Empty,
+        ConfirmPassword = string.Empty,
+        TipoUsuario = UsuarioEnum.Vendedor
+    };
+    private EditContext editContext = default!;
+    private ValidationMessageStore? messageStore;
+
+    private bool isProcessing;
+    private bool isSuccess;
+    private string? message;
+    private bool showLogoPlaceholder;
+    private string CssInput(string fieldName)
+    {
+        return HasError(fieldName)
+            ? "curio-form-control curio-input-invalid"
+            : "curio-form-control";
+    }
+
+    protected override void OnInitialized()
+    {
+        InicializarFormulario();
+    }
+
+    private void InicializarFormulario()
+    {
+        model = new CadastroUsuarioDto
+        {
+            Username = string.Empty,
+            Email = string.Empty,
+            Password = string.Empty,
+            ConfirmPassword = string.Empty,
+            TipoUsuario = UsuarioEnum.Vendedor
+        };
+
+        editContext = new EditContext(model);
+        messageStore = new ValidationMessageStore(editContext);
+    }
+
+    private bool HasError(string fieldName)
+    {
+        return editContext
+            .GetValidationMessages(new FieldIdentifier(model, fieldName))
+            .Any();
+    }
+
+    private void HandleImageError() => showLogoPlaceholder = true;
+
+    private async Task HandleCadastroUsuario()
+    {
+        isProcessing = true;
+        message = null;
+        isSuccess = false;
+
+        try
+        {
+            var result = await AuthManager.CadastroUsuarioAsync(model);
+
+            if (result?.Success == true)
+            {
+                isSuccess = true;
+                message = "Registro realizado com sucesso, verifique o e-mail e informe o código PIN";
+
+                await Task.Delay(50); // permite renderização estável
+                LimparFormulario();
+                return;
+            }
+
+            message = result?.Message ?? "Erro ao cadastrar usuário";
+        }
+        catch
+        {
+            message = "Erro de conexão com o sistema.";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private void LimparFormulario()
+    {
+        model.Username = string.Empty;
+        model.Email = string.Empty;
+        model.Password = string.Empty;
+        model.ConfirmPassword = string.Empty;
+        model.TipoUsuario = UsuarioEnum.Vendedor;
+
+        editContext = new EditContext(model);
+    }
+}
