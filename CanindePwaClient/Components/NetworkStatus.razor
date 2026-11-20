@@ -1,0 +1,68 @@
+﻿@using CanindePwaClient.Services.Offline
+@inject IOfflineCacheService OfflineCache
+@implements IDisposable
+
+<div class="curio-network-status @statusClass" @onclick="ToggleDetails">
+    <span class="curio-status-icon">@statusIcon</span>
+    <span class="curio-status-text">@statusText</span>
+    
+    @if (showDetails)
+    {
+        <div class="curio-network-details curio-p-2">
+            <div class="curio-font-size-sm">
+                <strong>Status:</strong> @(isOnline ? "Online" : "Offline")<br />
+                <strong>迆ltima verifica??o:</strong> @lastCheck.ToString("HH:mm:ss")<br />
+                @if (!isOnline)
+                {
+                    <span style="color: var(--curio-warning);">Modo offline ativo</span>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isOnline = true;
+    private bool showDetails = false;
+    private DateTime lastCheck = DateTime.Now;
+    private Timer? checkTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckNetworkStatus();
+        
+        // Verifica status a cada 10 segundos
+        checkTimer = new Timer(async _ => 
+        {
+            await CheckNetworkStatus();
+            await InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(10));
+    }
+
+    private async Task CheckNetworkStatus()
+    {
+        var previousStatus = isOnline;
+        isOnline = await OfflineCache.IsOnlineAsync();
+        lastCheck = DateTime.Now;
+
+        if (previousStatus != isOnline)
+        {
+            Console.WriteLine($"Status rede alterado: {(isOnline ? "ONLINE" : "OFFLINE")}");
+        }
+    }
+
+    private void ToggleDetails()
+    {
+        showDetails = !showDetails;
+        StateHasChanged();
+    }
+
+    private string statusIcon => isOnline ? "??" : "??";
+    private string statusText => isOnline ? "Online" : "Offline";
+    private string statusClass => isOnline ? "curio-network-online" : "curio-network-offline";
+
+    public void Dispose()
+    {
+        checkTimer?.Dispose();
+    }
+}

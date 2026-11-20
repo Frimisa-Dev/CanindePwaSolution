@@ -1,0 +1,154 @@
+﻿@page "/recuperar-acesso"
+@using CanindePwaClient.Components
+@inject IApiService ApiService
+@inject NavigationManager NavigationManager
+@using System.ComponentModel.DataAnnotations
+
+<PageTitle>AA Frimisa - Recuperar Acesso</PageTitle>
+
+<div class="curio-min-vh-100 curio-bg-gradient-home">
+    <div class="curio-container">
+        <div class="curio-row curio-justify-center curio-align-center curio-min-vh-100">
+            <div class="curio-col-md-8 curio-col-lg-6 curio-col-xl-5">
+                <div class="curio-card">
+                    <div class="curio-card-body curio-p-5">
+                      
+                        <!-- LOGO -->
+                        <div class="curio-text-center curio-mb-4">
+                            <img src="/images/logo.png" 
+                                 alt="AA Frimisa" 
+                                 class="curio-logo-image curio-mb-3"
+                                 @onerror="HandleImageError">
+    
+                            <!-- PLACEHOLDER DA LOGO (SE Imagem não carregar) -->
+                            @if (showLogoPlaceholder)
+                            {
+                                <div class="curio-logo-placeholder">
+                                    <span class="curio-placeholder-icon">🔐</span>
+                                    <div class="curio-placeholder-text">
+                                        <strong>Recuperar Acesso</strong>
+                                        <small>AA Frimisa</small>
+                                    </div>
+                                </div>
+                            }
+    
+                            <h2 class="curio-card-title">Recuperar Acesso</h2>
+                            <p class="curio-card-description">Informe seu e-mail para redefinir a senha</p>
+                        </div>
+
+                        <!-- FORMULÁRIO -->
+                        <EditForm Model="recoverModel" OnValidSubmit="HandleRecover">
+                            <DataAnnotationsValidator />
+
+                            <!-- EMAIL -->
+                            <div class="curio-form-group curio-mb-4">
+                                <label for="email" class="curio-form-label">E-mail</label>
+                                <InputText @bind-Value="recoverModel.Email" 
+                                         id="email"
+                                         class="curio-form-control"
+                                         placeholder="seu@email.com" />
+                                <ValidationMessage For="@(() => recoverModel.Email)" />
+                            </div>
+
+                            <!-- MENSAGEM DE ERRO/SUCESSO -->
+                            @if (!string.IsNullOrEmpty(message))
+                            {
+                                @if (isSuccess)
+                                {
+                                    <MensagemPadrao Texto="@message" 
+                                                   Tipo="@TipoMensagemEnum.Sucesso" 
+                                                   AutoCloseSeconds="5" />
+                                }
+                                else
+                                {
+                                    <MensagemPadrao Texto="@message" 
+                                                   Tipo="@TipoMensagemEnum.Erro" 
+                                                   AutoCloseSeconds="5" />
+                                }
+                            }
+
+                            <!-- BOTÃO ENVIAR -->
+                            <div class="curio-d-grid curio-gap-2 curio-mb-4">
+                                @if (isProcessing)
+                                {
+                                    <button class="curio-btn curio-btn-primary curio-btn-lg curio-d-flex curio-align-center curio-justify-center curio-gap-2" 
+                                            type="button" 
+                                            disabled>
+                                        <span class="curio-spinner-sm curio-border-2"></span>
+                                        <span>Enviando...</span>
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="curio-btn curio-btn-primary curio-btn-lg curio-d-flex curio-align-center curio-justify-center curio-gap-2" 
+                                            type="submit">
+                                        <i class="bi bi-envelope"></i>
+                                        <span>Enviar Link de Recuperação</span>
+                                    </button>
+                                }
+                            </div>
+                        </EditForm>
+
+                        <!-- BACK BUTTON -->
+                        <BackButton ButtonText="Voltar ao Início" CustomRoute="/" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RecoverModel recoverModel = new();
+    private bool isProcessing = false;
+    private string message = string.Empty;
+    private bool isSuccess = false;
+    private bool showLogoPlaceholder = false;
+
+    public class RecoverModel
+    {
+        [Required(ErrorMessage = "E-mail é obrigatório")]
+        [EmailAddress(ErrorMessage = "E-mail inválido")]
+        public string Email { get; set; } = string.Empty;
+    }
+
+    private void HandleImageError()
+    {
+        showLogoPlaceholder = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleRecover()
+    {
+        isProcessing = true;
+        message = string.Empty;
+        isSuccess = false;
+        StateHasChanged();
+
+        try
+        {
+            var ok = await ApiService.RequestPasswordRecoveryAsync(recoverModel.Email);
+            
+            if (ok)
+            {
+                isSuccess = true;
+                message = "Link de recuperação enviado para seu e-mail!";
+                recoverModel.Email = string.Empty;
+            }
+            else
+            {
+                message = "E-mail não encontrado ou erro no envio.";
+            }
+        }
+        catch (Exception ex)
+        {
+            message = "Erro ao processar solicitação. Tente novamente.";
+            Console.WriteLine($"Erro recuperação: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+}

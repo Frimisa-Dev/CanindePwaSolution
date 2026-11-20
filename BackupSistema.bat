@@ -2,15 +2,15 @@
 cls
 
 :: Mapeia o caminho UNC para uma unidade temporária
-pushd \\Eduardo\c\Desenvolvimento\VisualStudio\falcaoPwaSolution
+pushd \\Eduardo\c\Desenvolvimento\VisualStudio\canindePwaSolution
 if errorlevel 1 (
-    echo Erro ao acessar \\Eduardo\c\Desenvolvimento\VisualStudio\falcaoPwaSolution
+    echo Erro ao acessar \\Eduardo\c\Desenvolvimento\VisualStudio\canindePwaSolution
     pause
     exit /b
 )
 
 :: Define o diretório de destino
-set DESTINO=E:\Desenvolvimento\VisualStudio\falcaoPwaSolution
+set DESTINO=E:\Desenvolvimento\VisualStudio\canindePwaSolution
 
 :: Copia as pastas usando xcopy
 xcopy *.* "%DESTINO%" /y /s /e /d

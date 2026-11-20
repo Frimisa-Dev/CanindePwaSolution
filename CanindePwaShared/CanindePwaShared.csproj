@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <WarningsAsErrors>nullable</WarningsAsErrors>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Enums\AuthModeEnum.cs" />
+    <Compile Remove="Enums\EstatusEnum.cs" />
+    <Compile Remove="Enums\PerfilEnum.cs" />
+    <Compile Remove="Enums\ResultadoEnum.cs" />
+    <Compile Remove="Enums\SetorEnum.cs" />
+    <Compile Remove="Enums\SimNaoEnum.cs" />
+    <Compile Remove="Enums\TipoCepEnum.cs" />
+    <Compile Remove="Enums\TipoMensagemEnum.cs" />
+    <Compile Remove="Enums\UsuarioEnum.cs" />
+  </ItemGroup>
+</Project>
+

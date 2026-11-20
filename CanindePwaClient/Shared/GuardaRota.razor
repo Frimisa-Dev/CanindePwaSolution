@@ -1,0 +1,144 @@
+@* ============================================================
+   GuardaRota.razor
+   ------------------------------------------------------------
+   Guarda de NAVEGAÇÃO por rota/menu.
+
+   REGRA: usuário logado só abre a página se a rota estiver no
+   SEU menu (tabelas perfis / rotas / menus, via UserContext).
+   É a mesma lista que monta a sidebar: se a opção não aparece
+   no menu, digitar a URL também não abre a página.
+
+   - Rotas livres (sempre abrem): /, /login, /validarpin,
+     /recuperar-acesso, /dashboard
+   - Anônimo: não é tratado aqui; o AuthorizeRouteView decide
+     (páginas com [Authorize] mostram "Acesso Negado/Login")
+   - FALHA FECHADA: se o menu não carregar, nega
+   - Subpáginas valem pela rota pai (/cadastrarpessoa/12)
+
+   IMPORTANTE: isto controla a NAVEGAÇÃO. A segurança real dos
+   dados continua no servidor (policies / 403 nos endpoints).
+
+   Usado em App.razor, envolvendo o AuthorizeRouteView.
+   ============================================================ *@
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using CanindePwaClient.Auth
+
+@inject NavigationManager Navigation
+@inject UserContext UserContext
+
+@if (_verificando)
+{
+    @* Carregando o menu do usuário para conferir a rota *@
+    <div class="curio-text-center curio-p-5">
+        <div class="curio-spinner-modern"></div>
+        <p class="curio-mt-3">
+            Verificando autorização...
+        </p>
+    </div>
+}
+else if (_permitido)
+{
+    @ChildContent
+}
+else
+{
+    @* Sem permissão: mantém a sidebar (DashboardLayout) para o usuário
+       seguir navegando; usuário pendente de PIN usa o layout simples. *@
+    <LayoutView Layout="@(_pendentePin ? typeof(MainLayout) : typeof(DashboardLayout))">
+
+        <PageTitle>Acesso Negado - AA Frimisa</PageTitle>
+
+        <div class="curio-container curio-text-center curio-mt-5 curio-p-4">
+            <div class="curio-card curio-p-4 curio-text-center"
+                 style="border: 2px solid var(--curio-warning);">
+
+                <p class="curio-text-error"
+                   style="font-size: var(--curio-font-size-xl);
+                          font-weight: 600;">
+                    Acesso Negado
+                </p>
+
+                <p class="curio-mb-3">
+                    @(_pendentePin
+                        ? "Conclua a validação do PIN para acessar o sistema."
+                        : "Você não tem permissão para acessar esta página.")
+                </p>
+
+                <button class="curio-btn curio-btn--primary"
+                        @onclick="IrParaInicio">
+                    @(_pendentePin ? "Validar PIN" : "Voltar ao Dashboard")
+                </button>
+            </div>
+        </div>
+
+    </LayoutView>
+}
+
+@code {
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    // Estado de autenticação vindo do CascadingAuthenticationState (App.razor)
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthState { get; set; }
+
+    // Páginas que qualquer visitante/usuário logado pode abrir.
+    // Comparação exata (nenhuma delas tem subpáginas).
+    private static readonly HashSet<string> RotasLivres = new(StringComparer.Ordinal)
+    {
+        "/",
+        "/login",
+        "/validarpin",
+        "/recuperar-acesso",
+        "/dashboard"
+    };
+
+    private bool _verificando;
+    private bool _permitido;
+    private bool _pendentePin;
+
+    // Roda a cada navegação: o Router renderiza este componente de novo
+    // com a nova rota, então a conferência acontece em toda troca de página.
+    protected override async Task OnParametersSetAsync()
+    {
+        var caminho = UserContext.NormalizarCaminho(
+            Navigation.ToBaseRelativePath(Navigation.Uri));
+
+        // 1) Rota livre: abre sempre
+        if (RotasLivres.Contains(caminho))
+        {
+            _verificando = false;
+            _permitido = true;
+            return;
+        }
+
+        // 2) Anônimo: o AuthorizeRouteView decide (Acesso Negado / Login)
+        var auth = AuthState is null ? null : await AuthState;
+        var usuario = auth?.User;
+
+        if (usuario?.Identity?.IsAuthenticated != true)
+        {
+            _verificando = false;
+            _permitido = true;
+            return;
+        }
+
+        _pendentePin = usuario.HasClaim("IsActive", "False");
+
+        // 3) Logado: garante o menu carregado (a sidebar usa a mesma carga)
+        if (!UserContext.IsLoaded || UserContext.CurrentUser == null)
+        {
+            _verificando = true;
+            await UserContext.LoadAsync();
+            _verificando = false;
+        }
+
+        // 4) A rota precisa estar no menu do usuário
+        _permitido = UserContext.PodeAcessarRota(caminho);
+    }
+
+    private void IrParaInicio()
+        => Navigation.NavigateTo(_pendentePin ? "/validarpin" : "/dashboard");
+}

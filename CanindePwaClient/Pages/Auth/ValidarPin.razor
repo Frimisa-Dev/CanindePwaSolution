@@ -1,0 +1,497 @@
+@page "/validarpin"
+@attribute [Authorize(Policy = "RequirePendingPin")]
+
+@using CanindePwaShared.Models.Dto.AuthDto
+@using CanindePwaShared.Enums
+
+@inject NavigationManager Navigation
+@inject AuthManager AuthManager
+@inject IApiService Api
+
+<PageTitle>Validar PIN - AA Frimisa</PageTitle>
+
+<div class="curio-min-vh-100 curio-bg-gradient-home">
+    <div class="curio-container">
+        <div class="curio-row curio-justify-center curio-align-center curio-min-vh-100">
+            <div class="curio-col-md-8 curio-col-lg-6 curio-col-xl-5">
+                <div class="curio-card">
+                    <div class="curio-card-body curio-p-5">
+
+                        <div class="curio-text-center curio-mb-4">
+                            <h2 class="curio-card-title">Ativar Acesso</h2>
+                            
+                            @if (pinStatus == PinStatus.Valid)
+                            {
+                                <MensagemPadrao
+                                    Tipo="TipoMensagemEnum.Info"
+                                    Texto="Digite o código PIN recebido por e-mail e crie a sua senha definitiva para ativar o acesso." />
+
+                                <!-- CAMPOS PIN -->
+                                <div class="curio-form-group curio-mb-4 curio-text-center">
+                                    <label class="curio-form-label curio-d-block">Código PIN (6 dígitos)</label>
+
+                                    <div class="curio-d-flex curio-gap-2 curio-justify-center">
+                                        @for (int i = 0; i < 6; i++)
+                                        {
+                                            var index = i;
+                                            <input type="text"
+                                                   maxlength="1"
+                                                   class="curio-pin-input"
+                                                   inputmode="numeric"
+                                                   pattern="[0-9]*"
+                                                   value="@pinDigits[index]"
+                                                   @ref="pinInputs[index]"
+                                                   @oninput="e => OnPinInput(e, index)"
+                                                   @onkeydown="e => OnKeyDown(e, index)"
+                                                   autocomplete="off" />
+                                        }
+                                    </div>
+                                </div>
+
+                                @if (attemptsRemaining is not null)
+                                {
+                                    <p class="curio-text-center curio-text-danger curio-mb-3">
+                                        Restam @attemptsRemaining tentativa(s) com este código.
+                                    </p>
+                                }
+                                else
+                                {
+                                    <p class="curio-text-center curio-text-muted curio-mb-3">
+                                        São @MaxTentativasPin tentativas por código; depois um novo código é enviado.
+                                    </p>
+                                }
+
+                                <!-- NOVA SENHA -->
+                                <div class="curio-form-group curio-mb-3">
+                                    <label class="curio-form-label">Nova senha</label>
+                                    <input type="password"
+                                           class="curio-form-control"
+                                           autocomplete="new-password"
+                                           @bind="newPassword"
+                                           @bind:event="oninput" />
+                                    <small class="curio-text-muted">
+                                        Mínimo de 8 caracteres, com maiúscula, minúscula, número e símbolo.
+                                    </small>
+                                </div>
+
+                                <div class="curio-form-group curio-mb-3">
+                                    <label class="curio-form-label">Confirmar nova senha</label>
+                                    <input type="password"
+                                           class="curio-form-control"
+                                           autocomplete="new-password"
+                                           @bind="confirmPassword"
+                                           @bind:event="oninput" />
+                                </div>
+
+                                @if (passwordErrors.Count > 0)
+                                {
+                                    <ul class="curio-text-danger curio-mb-3">
+                                        @foreach (var erro in passwordErrors)
+                                        {
+                                            <li>@erro</li>
+                                        }
+                                    </ul>
+                                }
+
+                                <!-- BOTÃO VALIDAR -->
+                                <div class="curio-text-center">
+                                    <button class="curio-btn curio-btn-primary curio-btn-lg curio-w-100"
+                                            disabled="@(!CanSubmit || isLoading)"
+                                            @onclick="HandleValidatePin">
+                                        @(isLoading ? "Validando..." : "Ativar Acesso")
+                                    </button>
+                                </div>
+
+                                <!-- LINKS CORRETOS (SEM JAVASCRIPT) -->
+                                <div class="curio-text-center curio-mt-4">
+                                    <div class="curio-d-flex curio-gap-3 curio-justify-center">
+                                        <button type="button"
+                                                class="curio-btn curio-btn-link curio-text-primary"
+                                                disabled="@isLoading"
+                                                @onclick="HandleResendPin">
+                                            Reenviar PIN
+                                        </button>
+                                        
+                                        <span class="curio-text-muted">|</span>
+                                        
+                                        <button type="button"
+                                                class="curio-btn curio-btn-link curio-text-secondary"
+                                                @onclick="HandleVoltarParaLogin">
+                                            Voltar para Login
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                            else if (pinStatus == PinStatus.Expired)
+                            {
+                                <div class="curio-text-center curio-py-4">
+                                    <MensagemPadrao
+                                        Tipo="TipoMensagemEnum.Aviso"
+                                        Texto="Seu código PIN expirou. Você pode solicitar um novo código." />
+
+                                    <div class="curio-d-flex curio-gap-3 curio-justify-center curio-mt-4">
+                                        <button class="curio-btn curio-btn-primary"
+                                                disabled="@isLoading"
+                                                @onclick="HandleResendPin">
+                                            Reenviar PIN
+                                        </button>
+
+                                        <button class="curio-btn curio-btn-outline-secondary"
+                                                @onclick="HandleVoltarParaLogin">
+                                            Voltar para Login
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- MENSAGEM GLOBAL -->
+                        @if (!string.IsNullOrEmpty(globalMessage))
+                        {
+                            <MensagemPadrao
+                                Tipo="@globalMessageType"
+                                Texto="@globalMessage"
+                                AutoCloseSeconds="@globalMessageAutoClose" />
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isLoading;
+    private string globalMessage = string.Empty;
+    private TipoMensagemEnum globalMessageType = TipoMensagemEnum.Erro;
+    private int? globalMessageAutoClose;
+
+    private enum PinStatus { Loading, Valid, Expired, None }
+    private PinStatus pinStatus = PinStatus.Loading;
+
+    private string[] pinDigits = new string[6];
+    private ElementReference[] pinInputs = new ElementReference[6];
+    private bool[] shouldFocus = new bool[6];
+
+    private const int MaxTentativasPin = 5;
+
+    private string newPassword = string.Empty;
+    private string confirmPassword = string.Empty;
+    private List<string> passwordErrors = new();
+    private int? attemptsRemaining;   // vem do servidor depois de um PIN errado
+
+    private bool IsPinComplete => 
+        pinDigits != null && 
+        pinDigits.All(d => !string.IsNullOrEmpty(d) && d.Length == 1);
+
+    // Só habilita o envio com PIN completo e as duas senhas preenchidas (o servidor valida as regras).
+    private bool CanSubmit =>
+        IsPinComplete &&
+        !string.IsNullOrEmpty(newPassword) &&
+        !string.IsNullOrEmpty(confirmPassword);
+
+    protected override async Task OnInitializedAsync()
+    {    
+        InitializeArrays();
+        pinStatus = PinStatus.Loading;
+      
+        try
+        {
+            var status = await Api.GetAsync<PinStatusResponseDto>("api/auth/mypinstatus");
+
+            if (status == null)
+            {
+                ShowGlobalMessage("Erro ao verificar status do PIN.", TipoMensagemEnum.Erro, 5);
+                pinStatus = PinStatus.None;
+                return;
+            }
+
+            if (!status.HasPendingPin)
+            {
+                ShowGlobalMessage("Nenhum PIN pendente para validação.", TipoMensagemEnum.Info, 4);
+                pinStatus = PinStatus.None;
+                return;
+            }
+
+            if (status.IsExpired)
+            {
+                pinStatus = PinStatus.Expired;
+                return;
+            }
+
+            pinStatus = PinStatus.Valid;
+            shouldFocus[0] = true;
+        }
+        catch (Exception ex)
+        {
+            ShowGlobalMessage($"Erro: {ex.Message}", TipoMensagemEnum.Erro, 5);
+            pinStatus = PinStatus.None;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Aplica foco APENAS quando necessário
+        for (int i = 0; i < 6; i++)
+        {
+            if (shouldFocus[i])
+            {
+                // Reseta antes de aplicar
+                shouldFocus[i] = false;
+            
+                try
+                {
+                    // Aplica foco com pequeno delay
+                    await Task.Delay(10);
+                    await pinInputs[i].FocusAsync();
+                }
+                catch
+                {
+                    // Se falhar, tenta novamente no próximo ciclo
+                    if (i == 0) // Apenas para primeiro campo
+                    {
+                        shouldFocus[i] = true;
+                    }
+                }
+            }
+        }
+    }
+
+    private void InitializeArrays()
+    {
+        pinDigits = new string[6];
+        pinInputs = new ElementReference[6];
+        shouldFocus = new bool[6];
+        
+        for (int i = 0; i < 6; i++)
+        {
+            pinDigits[i] = string.Empty;
+            shouldFocus[i] = false;
+        }
+    }
+
+    private async Task OnPinInput(ChangeEventArgs e, int index)
+    {
+        var input = e.Value?.ToString()?.Trim() ?? string.Empty;
+    
+        // REGRA: Aceita APENAS dígitos
+        if (input.Length == 1 && char.IsDigit(input[0]))
+        {
+            pinDigits[index] = input;
+        
+            // Auto-avanço: Marca próximo campo para foco
+            if (index < 5)
+            {
+                // Garante que apenas UM campo será focado
+                for (int i = 0; i < 6; i++)
+                {
+                    shouldFocus[i] = false;
+                }
+                shouldFocus[index + 1] = true;
+            
+                // Força renderização imediata
+                StateHasChanged();
+            }
+        }
+        else if (input.Length == 0)
+        {
+            // Backspace/Delete
+            pinDigits[index] = string.Empty;
+        }
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e, int index)
+    {
+        switch (e.Key)
+        {
+            case "ArrowLeft" when index > 0:
+                // Limpa todos os focos anteriores
+                for (int i = 0; i < 6; i++) shouldFocus[i] = false;
+                shouldFocus[index - 1] = true;
+                StateHasChanged();
+                break;
+            
+            case "ArrowRight" when index < 5:
+                for (int i = 0; i < 6; i++) shouldFocus[i] = false;
+                shouldFocus[index + 1] = true;
+                StateHasChanged();
+                break;
+            
+            case "Backspace" when string.IsNullOrEmpty(pinDigits[index]) && index > 0:
+                for (int i = 0; i < 6; i++) shouldFocus[i] = false;
+                shouldFocus[index - 1] = true;
+                StateHasChanged();
+                break;
+            
+            case "Enter" when CanSubmit && !isLoading:
+                _ = HandleValidatePin();
+                break;
+        }
+    }
+
+    private async Task HandleValidatePin()
+    {
+        if (!CanSubmit || isLoading) return;
+
+        isLoading = true;
+        passwordErrors = new List<string>();
+        StateHasChanged();
+
+        try
+        {
+            var pin = string.Concat(pinDigits);
+            var result = await AuthManager.ValidatePinAsync(pin, newPassword, confirmPassword);
+
+            // SUCESSO: PIN e senha aceitos, conta ativa e cookie já reemitido pelo servidor
+            if (result.Success)
+            {
+                newPassword = string.Empty;
+                confirmPassword = string.Empty;
+                ShowGlobalMessage("Acesso ativado com sucesso!", TipoMensagemEnum.Sucesso, 2);
+                await Task.Delay(1500);
+                Navigation.NavigateTo("/dashboard", true);
+                return;
+            }
+
+            // PIN CORRETO, SENHA RECUSADA: mantém o PIN digitado e mostra as regras violadas
+            if (result.Errors.Count > 0)
+            {
+                passwordErrors = result.Errors;
+                ShowGlobalMessage(result.Message, TipoMensagemEnum.Erro, 5);
+                return;
+            }
+
+            // PIN EXPIRADO
+            if (result.Expired)
+            {
+                pinStatus = PinStatus.Expired;
+                ShowGlobalMessage(result.Message, TipoMensagemEnum.Aviso, 5);
+                return;
+            }
+
+            // LIMITE DE TENTATIVAS: o servidor já enviou um PIN novo por e-mail
+            if (result.NewPinSent)
+            {
+                attemptsRemaining = null;
+                InitializeArrays();
+                shouldFocus[0] = true;
+                ShowGlobalMessage(result.Message, TipoMensagemEnum.Aviso, 8);
+                return;
+            }
+
+            // PIN ERRADO: mostra quantas tentativas restam
+            attemptsRemaining = result.AttemptsRemaining;
+            ShowGlobalMessage(result.Message, TipoMensagemEnum.Erro, 5);
+
+            // Aguarda a mensagem aparecer ANTES de resetar
+            await Task.Delay(100);
+            await ResetForNewAttempt();
+        }
+        catch
+        {
+            ShowGlobalMessage("Erro ao validar PIN.", TipoMensagemEnum.Erro, 5);
+            await Task.Delay(100);
+            await ResetForNewAttempt();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleResendPin()
+    {
+        if (isLoading) return;
+
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var enviado = await AuthManager.ResendPinAsync();
+            if (!enviado)
+            {
+                ShowGlobalMessage("Não foi possível reenviar o PIN.", TipoMensagemEnum.Erro, 5);
+                return;
+            }
+
+            ShowGlobalMessage("Novo código PIN enviado com sucesso.", TipoMensagemEnum.Sucesso, 5);
+
+            // Volta para a tela de digitação (se estava em "PIN expirado") com contador zerado
+            pinStatus = PinStatus.Valid;
+            attemptsRemaining = null;
+            passwordErrors = new List<string>();
+            InitializeArrays();
+            shouldFocus[0] = true;
+            
+            await Task.Delay(2000);
+        }
+        catch
+        {
+            ShowGlobalMessage("Erro ao reenviar PIN.", TipoMensagemEnum.Erro, 5);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleVoltarParaLogin()
+    {
+        try
+        {
+            await Api.PostAsync<object, object>("api/auth/logout", new { });
+        }
+        catch
+        {
+            // Continua mesmo falhando
+        }
+        
+        Navigation.NavigateTo("/login", forceLoad: true);
+    }
+
+    private async Task ResetForNewAttempt()
+    {
+        // 1. Limpa os dígitos
+        for (int i = 0; i < 6; i++)
+        {
+            pinDigits[i] = string.Empty;
+        }
+    
+        // 2. Reseta o array shouldFocus COMPLETAMENTE
+        for (int i = 0; i < 6; i++)
+        {
+            shouldFocus[i] = false;
+        }
+    
+        // 3. Marca PRIMEIRO campo para foco
+        shouldFocus[0] = true;
+    
+        // 4. Força renderização
+        StateHasChanged();
+    
+        // 5. Pequeno delay para estabilidade
+        await Task.Delay(50);
+    }
+
+    private void ShowGlobalMessage(string message, TipoMensagemEnum type, int? autoCloseSeconds)
+    {
+        // Limpa mensagem anterior primeiro
+        globalMessage = string.Empty;
+        StateHasChanged(); // Força limpeza
+    
+        // Pequeno delay para garantir limpeza
+        Task.Delay(10).ContinueWith(_ => 
+        {
+            InvokeAsync(() =>
+            {
+                globalMessage = message;
+                globalMessageType = type;
+                globalMessageAutoClose = autoCloseSeconds;
+                StateHasChanged(); // Força renderização da nova mensagem
+            });
+        });
+    }
+}

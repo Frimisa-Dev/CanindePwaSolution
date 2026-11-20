@@ -107,3 +107,5 @@ PowerShell/*Infra*.txt
 diff-temp.txt
 ProjetoGeral.txt
 EstruturaFrontend
+# Local Netlify folder
+.netlify

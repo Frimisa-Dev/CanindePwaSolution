@@ -1,0 +1,308 @@
+ESTRUTURA DA SOLUÇÃO — gerado em 2026-11-19 12:55
+Raiz: C:\Desenvolvimento\VisualStudio\CanindePwaSolution
+Total de arquivos listados: 163
+
+=== PASTAS E ARQUIVOS ===
+[.]
+    CanindePwaSolution-Estrutura.md  (38,4 KB)
+    CanindePwaSolution.sln  (2,1 KB)
+    publicar-site.ps1  (4,2 KB)
+[CanindePwaClient]
+    _Imports.razor  (0,7 KB)
+    App.razor  (8,9 KB)
+    CanindePwaClient.csproj  (1,5 KB)
+    Program.cs  (6 KB)
+[CanindePwaClient\Auth]
+    AuthManager.cs  (4,3 KB)
+    CookieAuthStateProvider.cs  (6,3 KB)
+    UserContext.cs  (1,9 KB)
+[CanindePwaClient\Components]
+    BackButton.razor  (1,4 KB)
+    MensagemPadrao.razor  (2 KB)
+    NetworkStatus.razor  (2,1 KB)
+[CanindePwaClient\Handlers]
+    CookieHandler.cs  (0,7 KB)
+    SecurityHeadersHandler.cs  (1,4 KB)
+    WasmCircuitBreakerHandler.cs  (5,1 KB)
+    WasmRetryHandler.cs  (4 KB)
+[CanindePwaClient\Pages]
+    Home.razor  (7 KB)
+    Login.razor  (9 KB)
+    RecuperarAcesso.razor  (6,5 KB)
+[CanindePwaClient\Pages\Auth]
+    CadastrarUsuario.razor  (8,4 KB)
+    Dashboard.razor  (4,4 KB)
+    ValidarPin.razor  (14,3 KB)
+[CanindePwaClient\Properties]
+    launchSettings.json  (0,5 KB)
+[CanindePwaClient\Services]
+    ApiService.cs  (3,5 KB)
+    ClientMenuService.cs  (0,8 KB)
+    IApiService.cs  (1 KB)
+    IClientMenuService.cs  (0,2 KB)
+    NavigationService.cs  (0,9 KB)
+    SecurityUtilities.cs  (1,2 KB)
+[CanindePwaClient\Services\Offline]
+    IOfflineCacheService.cs  (1,1 KB)
+    IOfflineSyncService.cs  (0,4 KB)
+    OfflineCacheService.cs  (5,1 KB)
+    OfflineSyncService.cs  (4 KB)
+[CanindePwaClient\Shared]
+    DashboardLayout.razor  (2,3 KB)
+    MainLayout.razor  (0,1 KB)
+    RedirectToLogin.razor  (0,5 KB)
+    SidebarDinamico.razor  (2,6 KB)
+[CanindePwaClient\wwwroot]
+    appsettings.json  (0,4 KB)
+[CanindePwaShared]
+    CanindePwaShared.csproj  (0,8 KB)
+[CanindePwaShared\Caninde.Api]
+    appsettings.Development.json  (0,5 KB)
+    appsettings.Production.json  (0,5 KB)
+[CanindePwaShared\Enums]
+    ProjetoEnums.cs  (5,4 KB)
+[CanindePwaShared\Models\Auth]
+    EmailPin.cs  (0,6 KB)
+    EmailSettings.cs  (0,5 KB)
+    Menu.cs  (0,8 KB)
+    Perfil.cs  (0,7 KB)
+    RefreshToken.cs  (0,9 KB)
+    Role.cs  (0,3 KB)
+    Rota.cs  (0,8 KB)
+    SecurityPin.cs  (0,7 KB)
+    TempPassword.cs  (0,7 KB)
+    User.cs  (1,1 KB)
+    UserRole.cs  (0,3 KB)
+[CanindePwaShared\Models\Dto\AuthDto]
+    AuditLogDto.cs  (0,5 KB)
+    CadastroUsuarioDto.cs  (1,2 KB)
+    CadastroUsuarioResponseDto.cs  (0,5 KB)
+    ForgotPasswordDto.cs  (0,3 KB)
+    LoginDto.cs  (0,3 KB)
+    LoginResponseDto.cs  (0,5 KB)
+    MenuItemDto.cs  (0,4 KB)
+    MenuResponseDto.cs  (0,2 KB)
+    PasswordResetTokenDto.cs  (0,3 KB)
+    PendingPinDto.cs  (0,4 KB)
+    PerfilDto.cs  (0,3 KB)
+    PinStatusResponseDto.cs  (0,3 KB)
+    RefreshTokenResponseDto.cs  (0,4 KB)
+    ResendPinDto.cs  (0,3 KB)
+    ResetPasswordDto.cs  (0,5 KB)
+    RotaDto.cs  (0,4 KB)
+    SeedAdminDto.cs  (0,4 KB)
+    SeedResultDto.cs  (0,3 KB)
+    ValidatePinDto.cs  (0,1 KB)
+    VerifyPinDto.cs  (0,4 KB)
+    VerifyPinRequestDto.cs  (0,4 KB)
+[CanindePwaShared\Models\Dto\CommonDto]
+    AuthResponseDto.cs  (0,3 KB)
+    BoolWrapperDto.cs  (5,1 KB)
+    CachedItemDto.cs  (0,4 KB)
+    ChangePasswordDto.cs  (0,4 KB)
+    OfflineOperationDto.cs  (0,7 KB)
+    OperationResponseDto.cs  (0,3 KB)
+[CanindePwaShared\Models\Dto\TableDto]
+    BairroRequestDto.cs  (0,2 KB)
+    BairroResponseDto.cs  (0,2 KB)
+    PessoaEmailRequestDto.cs  (0,6 KB)
+    PessoaEmailResponseDto.cs  (0,4 KB)
+    PessoaRequestDto.cs  (2,2 KB)
+    PessoaResponseDto.cs  (1,3 KB)
+[CanindePwaShared\Models\Dto\UserDto]
+    ChangePasswordRequestDto.cs  (0,3 KB)
+    UpdateUserDto.cs  (0,2 KB)
+    UserProfileDto.cs  (0,8 KB)
+    UserProfileResponseDto.cs  (0,4 KB)
+[CanindePwaShared\Models\Tbl]
+    MaxLengthAttribute.cs  (0,1 KB)
+    TblBairro.cs  (0,2 KB)
+    TblBase.cs  (0,4 KB)
+    TblCep.cs  (0,6 KB)
+    TblCidade.cs  (0,2 KB)
+    TblEstado.cs  (0,2 KB)
+    TblLogradouro.cs  (0,2 KB)
+    TblParametro.cs  (0,4 KB)
+    TblPessoa.cs  (6,3 KB)
+[CanindePwaShared\Models\Uvw]
+    UvwBairro.cs  (0,2 KB)
+    UvwCep.cs  (0,8 KB)
+    UvwCidade.cs  (0,2 KB)
+    UvwEstado.cs  (0,2 KB)
+    UvwLogradouro.cs  (0,2 KB)
+    UvwParametro.cs  (0,4 KB)
+    UvwPessoa.cs  (1,4 KB)
+    UvwPessoaEmail.cs  (0,4 KB)
+    UvwPessoaFisica.cs  (0,7 KB)
+    UvwPessoaJuridica.cs  (0,8 KB)
+[CanindeWebServer]
+    appsettings.json  (0,5 KB)
+    CanindeWebServer.csproj  (2,1 KB)
+    Program.cs  (52 KB)
+[CanindeWebServer\Configuration]
+    RegistryConfiguration.cs  (6,5 KB)
+[CanindeWebServer\Controllers]
+    AuthController.cs  (40,5 KB)
+    GenericCrudController.cs  (10,7 KB)
+    MenuController.cs  (1,4 KB)
+    PessoaController.cs  (4,2 KB)
+    PessoaEmailController.cs  (2 KB)
+    UsersController.cs  (2,4 KB)
+[CanindeWebServer\Data]
+    ProjetoDbContext.cs  (17,6 KB)
+[CanindeWebServer\Middleware]
+    AuthConsistencyMiddleware.cs  (2,6 KB)
+[CanindeWebServer\Properties]
+    launchSettings.json  (0,5 KB)
+[CanindeWebServer\Repositories]
+    IUserRepository.cs  (0,5 KB)
+    UserRepository.cs  (1,5 KB)
+[CanindeWebServer\Services]
+    AdminSeedService.cs  (4,8 KB)
+    AuthService.cs  (10,6 KB)
+    CepLookupService.cs  (6 KB)
+    EmailService.cs  (7,4 KB)
+    GenericCrudService.cs  (7,3 KB)
+    IAdminSeedService.cs  (3,3 KB)
+    IAuthService.cs  (1,1 KB)
+    ICepLookupService.cs  (0,5 KB)
+    IEmailService.cs  (0,9 KB)
+    IMenuService.cs  (0,4 KB)
+    IPasswordHasher.cs  (0,7 KB)
+    IPessoaEmailService.cs  (0,4 KB)
+    IPessoaService.cs  (0,4 KB)
+    IPinConfigurationService.cs  (0,3 KB)
+    ITempPasswordService.cs  (0,2 KB)
+    MenuService.cs  (2,3 KB)
+    PasswordHasherService.cs  (2,2 KB)
+    PessoaEmailService.cs  (4,6 KB)
+    PessoaService.cs  (21,4 KB)
+    PinConfigurationService.cs  (1,6 KB)
+    TempPasswordService.cs  (1,9 KB)
+[CanindeWebServer\Services\Health]
+    EmailServiceHealthCheck.cs  (1,9 KB)
+[CanindeWebServer\Services\Utils]
+    CpfCnpjValidator.cs  (2,2 KB)
+    FormatUtils.cs  (2,1 KB)
+    PdfReportBuilder.cs  (4,8 KB)
+    UtilizarEnum.cs  (0,3 KB)
+[CanindeWebServer\Swagger]
+    GenericCrudSwaggerOperationFilter.cs  (2,4 KB)
+[Lixo]
+    Dump-MySqlSchema.ps1  (8,9 KB)
+    Dump-ProjectStructure.ps1  (7,8 KB)
+[PowerShell]
+    Criar-Usuario-CanindeWeb.ps1  (1,6 KB)
+    Deploy-CanindeWebServer-Server.ps1  (7,5 KB)
+    Publish-CanindeWebServer-Local.ps1  (2,2 KB)
+[SiteCaninde]
+    LEIAME.md  (4 KB)
+    package-lock.json  (0,6 KB)
+    package.json  (0,1 KB)
+    Web.config  (0,5 KB)
+[SiteCaninde\.netlify]
+    state.json  (0,4 KB)
+[SiteCaninde\.netlify\functions]
+    manifest.json  (1,1 KB)
+
+=== PROJETOS (.csproj) ===
+[CanindePwaClient\CanindePwaClient.csproj]
+    TargetFramework: net10.0
+    Pacote: Blazored.Toast 4.2.1
+    Pacote: Microsoft.AspNetCore.Components.WebAssembly 10.0.13
+    Pacote: Microsoft.AspNetCore.Components.WebAssembly.Authentication 10.0.13
+    Pacote: Microsoft.AspNetCore.Components.WebAssembly.DevServer 10.0.13
+    Pacote: Microsoft.Extensions.Http 10.0.13
+    Pacote: System.Net.Http.Json 10.0.13
+    Pacote: Blazored.LocalStorage 4.5.0
+    Pacote: Blazorise.Bootstrap5 1.8.7
+    Pacote: Blazorise.Charts 1.8.7
+    Pacote: Blazorise.Icons.FontAwesome 1.8.7
+    Pacote: Microsoft.Extensions.Http 10.0.13
+    Pacote: System.Net.Http.Json 10.0.13
+    Referência de projeto: ..\CanindePwaShared\CanindePwaShared.csproj
+[CanindePwaShared\CanindePwaShared.csproj]
+    TargetFramework: net10.0
+[CanindeWebServer\CanindeWebServer.csproj]
+    TargetFramework: net10.0
+    Pacote: BCrypt.Net-Next 4.0.3
+    Pacote: MailKit 4.16.0
+    Pacote: Microsoft.AspNetCore.Authentication.JwtBearer 10.0.1
+    Pacote: Microsoft.AspNetCore.Identity.EntityFrameworkCore 10.0.1
+    Pacote: Microsoft.EntityFrameworkCore 10.0.1
+    Pacote: Microsoft.EntityFrameworkCore.Relational 10.0.1
+    Pacote: Microsoft.EntityFrameworkCore.Tools 10.0.1
+    Pacote: Microsoft.EntityFrameworkCore.Design 10.0.1
+    Pacote: Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore 10.0.1
+    Pacote: AspNetCore.HealthChecks.UI.Client 9.0.0
+    Pacote: Microsoft.IdentityModel.Tokens 8.0.1
+    Pacote: System.IdentityModel.Tokens.Jwt 8.0.1
+    Pacote: MySql.EntityFrameworkCore 10.0.1
+    Pacote: QuestPDF 2025.12.0
+    Pacote: Swashbuckle.AspNetCore 9.0.6
+    Pacote: System.Security.Cryptography.Pkcs 10.0.2
+    Referência de projeto: ..\CanindePwaShared\CanindePwaShared.csproj
+
+=== CONTROLLERS ===
+    AuthController.cs
+    GenericCrudController.cs
+    MenuController.cs
+    PessoaController.cs
+    PessoaEmailController.cs
+    UsersController.cs
+
+=== SERVICES ===
+    AdminSeedService.cs
+    ApiService.cs
+    AuthService.cs
+    CepLookupService.cs
+    ClientMenuService.cs
+    CpfCnpjValidator.cs
+    EmailService.cs
+    EmailServiceHealthCheck.cs
+    FormatUtils.cs
+    GenericCrudService.cs
+    IAdminSeedService.cs
+    IApiService.cs
+    IAuthService.cs
+    ICepLookupService.cs
+    IClientMenuService.cs
+    IEmailService.cs
+    IMenuService.cs
+    IOfflineCacheService.cs
+    IOfflineSyncService.cs
+    IPasswordHasher.cs
+    IPessoaEmailService.cs
+    IPessoaService.cs
+    IPinConfigurationService.cs
+    ITempPasswordService.cs
+    MenuService.cs
+    NavigationService.cs
+    OfflineCacheService.cs
+    OfflineSyncService.cs
+    PasswordHasherService.cs
+    PdfReportBuilder.cs
+    PessoaEmailService.cs
+    PessoaService.cs
+    PinConfigurationService.cs
+    SecurityUtilities.cs
+    TempPasswordService.cs
+    UtilizarEnum.cs
+
+=== DTOs ===
+    CanindePwaShared\Models\Dto\AuthDto\CadastroUsuarioResponseDto.cs
+    CanindePwaShared\Models\Dto\AuthDto\LoginResponseDto.cs
+    CanindePwaShared\Models\Dto\AuthDto\MenuResponseDto.cs
+    CanindePwaShared\Models\Dto\AuthDto\PinStatusResponseDto.cs
+    CanindePwaShared\Models\Dto\AuthDto\RefreshTokenResponseDto.cs
+    CanindePwaShared\Models\Dto\AuthDto\VerifyPinRequestDto.cs
+    CanindePwaShared\Models\Dto\CommonDto\AuthResponseDto.cs
+    CanindePwaShared\Models\Dto\CommonDto\OperationResponseDto.cs
+    CanindePwaShared\Models\Dto\TableDto\BairroRequestDto.cs
+    CanindePwaShared\Models\Dto\TableDto\BairroResponseDto.cs
+    CanindePwaShared\Models\Dto\TableDto\PessoaEmailRequestDto.cs
+    CanindePwaShared\Models\Dto\TableDto\PessoaEmailResponseDto.cs
+    CanindePwaShared\Models\Dto\TableDto\PessoaRequestDto.cs
+    CanindePwaShared\Models\Dto\TableDto\PessoaResponseDto.cs
+    CanindePwaShared\Models\Dto\UserDto\ChangePasswordRequestDto.cs
+    CanindePwaShared\Models\Dto\UserDto\UserProfileResponseDto.cs

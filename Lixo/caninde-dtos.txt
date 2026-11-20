@@ -1,0 +1,300 @@
+
+======================================================================
+ PROJECT STRUCTURE DUMP
+======================================================================
+ Root:        C:\Desenvolvimento\VisualStudio\CanindePwaSolution
+ Generated:   2026-11-18 11:47:53
+ LineCounts:  False
+ ListDtos:    True
+======================================================================
+
+SOLUTION: CanindePwaSolution.sln
+
+PROJECT:  CanindePwaClient\CanindePwaClient.csproj                 [Microsoft.NET.Sdk.BlazorWebAssembly]
+PROJECT:  CanindePwaShared\CanindePwaShared.csproj                 [Microsoft.NET.Sdk]
+PROJECT:  CanindeWebServer\CanindeWebServer.csproj                 [Microsoft.NET.Sdk.Web]
+
+======================================================================
+ DTO CLASSES (*RequestDto / *ResponseDto)
+======================================================================
+--- RequestDtos (4) ---
+  ChangePasswordRequestDto  <-  CanindePwaShared\Models\Dto\UserDto\ChangePasswordRequestDto.cs
+  TblBairroRequestDto  <-  CanindePwaShared\Models\Dto\TableDto\BairroRequestDto.cs
+  TblPessoaEmailRequestDto  <-  CanindePwaShared\Models\Dto\TableDto\PessoaEmailRequestDto.cs
+  TblPessoaRequestDto  <-  CanindePwaShared\Models\Dto\TableDto\PessoaRequestDto.cs
+
+--- ResponseDtos (12) ---
+  AuthResponseDto  <-  CanindePwaShared\Models\Dto\CommonDto\AuthResponseDto.cs
+  CadastroUsuarioResponseDto  <-  CanindePwaShared\Models\Dto\AuthDto\CadastroUsuarioResponseDto.cs
+  LoginResponseDto  <-  CanindePwaShared\Models\Dto\AuthDto\LoginResponseDto.cs
+  MenuResponseDto  <-  CanindePwaShared\Models\Dto\AuthDto\MenuResponseDto.cs
+  OperationResponseDto  <-  CanindePwaShared\Models\Dto\CommonDto\OperationResponseDto.cs
+  PinStatusResponseDto  <-  CanindePwaShared\Models\Dto\AuthDto\PinStatusResponseDto.cs
+  RefreshTokenResponseDto  <-  CanindePwaShared\Models\Dto\AuthDto\RefreshTokenResponseDto.cs
+  TblBairroResponseDto  <-  CanindePwaShared\Models\Dto\TableDto\BairroResponseDto.cs
+  TblPessoaEmailResponseDto  <-  CanindePwaShared\Models\Dto\TableDto\PessoaEmailResponseDto.cs
+  TblPessoaResponseDto  <-  CanindePwaShared\Models\Dto\TableDto\PessoaResponseDto.cs
+  UserProfileResponseDto  <-  CanindePwaShared\Models\Dto\UserDto\UserProfileResponseDto.cs
+  VerifyPinResponseDto  <-  CanindePwaShared\Models\Dto\AuthDto\VerifyPinRequestDto.cs
+
+--- Outros DTOs (21) ---
+  AuditLogDto  <-  CanindePwaShared\Models\Dto\AuthDto\AuditLogDto.cs
+  BoolWrapperDto  <-  CanindePwaShared\Models\Dto\CommonDto\BoolWrapperDto.cs
+  CachedItemDto  <-  CanindePwaShared\Models\Dto\CommonDto\CachedItemDto.cs
+  CadastroUsuarioDto  <-  CanindePwaShared\Models\Dto\AuthDto\CadastroUsuarioDto.cs
+  ChangePasswordDto  <-  CanindePwaShared\Models\Dto\CommonDto\ChangePasswordDto.cs
+  ForgotPasswordDto  <-  CanindePwaShared\Models\Dto\AuthDto\ForgotPasswordDto.cs
+  LoginDto  <-  CanindePwaShared\Models\Dto\AuthDto\LoginDto.cs
+  MenuItemDto  <-  CanindePwaShared\Models\Dto\AuthDto\MenuItemDto.cs
+  OfflineOperationDto  <-  CanindePwaShared\Models\Dto\CommonDto\OfflineOperationDto.cs
+  PasswordResetTokenDto  <-  CanindePwaShared\Models\Dto\AuthDto\PasswordResetTokenDto.cs
+  PendingPinDto  <-  CanindePwaShared\Models\Dto\AuthDto\PendingPinDto.cs
+  PerfilDto  <-  CanindePwaShared\Models\Dto\AuthDto\PerfilDto.cs
+  ResendPinDto  <-  CanindePwaShared\Models\Dto\AuthDto\ResendPinDto.cs
+  ResetPasswordDto  <-  CanindePwaShared\Models\Dto\AuthDto\ResetPasswordDto.cs
+  RotaDto  <-  CanindePwaShared\Models\Dto\AuthDto\RotaDto.cs
+  SeedAdminDto  <-  CanindePwaShared\Models\Dto\AuthDto\SeedAdminDto.cs
+  SeedResultDto  <-  CanindePwaShared\Models\Dto\AuthDto\SeedResultDto.cs
+  UpdateUserDto  <-  CanindePwaShared\Models\Dto\UserDto\UpdateUserDto.cs
+  UserProfileDto  <-  CanindePwaShared\Models\Dto\UserDto\UserProfileDto.cs
+  ValidatePinDto  <-  CanindePwaShared\Models\Dto\AuthDto\ValidatePinDto.cs
+  VerifyPinDto  <-  CanindePwaShared\Models\Dto\AuthDto\VerifyPinDto.cs
+
+======================================================================
+ PROJECT: CanindePwaClient
+ Path:    C:\Desenvolvimento\VisualStudio\CanindePwaSolution\CanindePwaClient
+======================================================================
+CanindePwaClient/
+|-- Auth/
+|   |-- AuthManager.cs  (4,3 KB)
+|   |-- CookieAuthStateProvider.cs  (6,3 KB)
+|   |-- CookieAuthStateProvider.cs.backup  (5,9 KB)
+|   +-- UserContext.cs  (1,9 KB)
+|-- bin/  [skipped]
+|-- Components/
+|   |-- BackButton.razor  (1,4 KB)
+|   |-- MensagemPadrao.razor  (2,0 KB)
+|   +-- NetworkStatus.razor  (2,1 KB)
+|-- Handlers/
+|   |-- CookieHandler.cs  (690 B)
+|   |-- SecurityHeadersHandler.cs  (1,4 KB)
+|   |-- WasmCircuitBreakerHandler.cs  (5,1 KB)
+|   +-- WasmRetryHandler.cs  (4,0 KB)
+|-- obj/  [skipped]
+|-- Pages/
+|   |-- Auth/
+|   |   |-- CadastrarUsuario.razor  (8,4 KB)
+|   |   |-- Dashboard.razor  (4,4 KB)
+|   |   +-- ValidarPin.razor  (14,3 KB)
+|   |-- Home.razor  (7,0 KB)
+|   |-- Login.razor  (9,0 KB)
+|   +-- RecuperarAcesso.razor  (6,5 KB)
+|-- Properties/
+|   +-- launchSettings.json  (485 B)
+|-- Services/
+|   |-- Offline/
+|   |   |-- IOfflineCacheService.cs  (1,1 KB)
+|   |   |-- IOfflineSyncService.cs  (375 B)
+|   |   |-- OfflineCacheService.cs  (5,1 KB)
+|   |   +-- OfflineSyncService.cs  (4,0 KB)
+|   |-- ApiService.cs  (3,5 KB)
+|   |-- ClientMenuService.cs  (802 B)
+|   |-- IApiService.cs  (980 B)
+|   |-- IClientMenuService.cs  (217 B)
+|   |-- NavigationService.cs  (937 B)
+|   +-- SecurityUtilities.cs  (1,2 KB)
+|-- Shared/
+|   |-- DashboardLayout.razor  (2,3 KB)
+|   |-- MainLayout.razor  (112 B)
+|   |-- RedirectToLogin.razor  (537 B)
+|   +-- SidebarDinamico.razor  (2,6 KB)
+|-- wwwroot/
+|   |-- css/  [skipped]
+|   |-- images/
+|   |   |-- logo.png  (15,1 KB)
+|   |   +-- marca.png  (5,4 KB)
+|   |-- lib/  [skipped]
+|   |-- appsettings.json  (410 B)
+|   |-- favicon.png  (2,2 KB)
+|   |-- icon-192.png  (2,6 KB)
+|   +-- index.html  (1,0 KB)
+|-- _Imports.razor  (666 B)
+|-- App.razor  (8,9 KB)
+|-- build_log.txt  (13,9 MB)
+|-- CanindePwaClient.csproj  (1,5 KB)
+|-- erroClient  (5,3 KB)
+|-- erroServer  (3,1 KB)
+|-- EstruturaFrontend  (10,0 KB)
++-- Program.cs  (6,0 KB)
+
+======================================================================
+ PROJECT: CanindePwaShared
+ Path:    C:\Desenvolvimento\VisualStudio\CanindePwaSolution\CanindePwaShared
+======================================================================
+CanindePwaShared/
+|-- bin/  [skipped]
+|-- Caninde.Api/
+|   |-- appsettings.Development.json  (498 B)
+|   +-- appsettings.Production.json  (503 B)
+|-- Enums/
+|   +-- ProjetoEnums.cs  (5,4 KB)
+|-- Models/
+|   |-- Auth/
+|   |   |-- EmailPin.cs  (595 B)
+|   |   |-- EmailSettings.cs  (528 B)
+|   |   |-- Menu.cs  (787 B)
+|   |   |-- Perfil.cs  (731 B)
+|   |   |-- RefreshToken.cs  (925 B)
+|   |   |-- Role.cs  (320 B)
+|   |   |-- Rota.cs  (787 B)
+|   |   |-- SecurityPin.cs  (705 B)
+|   |   |-- TempPassword.cs  (675 B)
+|   |   |-- User.cs  (1,1 KB)
+|   |   +-- UserRole.cs  (265 B)
+|   |-- Dto/
+|   |   |-- AuthDto/
+|   |   |   |-- AuditLogDto.cs  (473 B)
+|   |   |   |-- CadastroUsuarioDto.cs  (1,2 KB)
+|   |   |   |-- CadastroUsuarioResponseDto.cs  (480 B)
+|   |   |   |-- ForgotPasswordDto.cs  (306 B)
+|   |   |   |-- LoginDto.cs  (328 B)
+|   |   |   |-- LoginResponseDto.cs  (529 B)
+|   |   |   |-- MenuItemDto.cs  (394 B)
+|   |   |   |-- MenuResponseDto.cs  (230 B)
+|   |   |   |-- PasswordResetTokenDto.cs  (333 B)
+|   |   |   |-- PendingPinDto.cs  (363 B)
+|   |   |   |-- PerfilDto.cs  (351 B)
+|   |   |   |-- PinStatusResponseDto.cs  (350 B)
+|   |   |   |-- RefreshTokenResponseDto.cs  (382 B)
+|   |   |   |-- ResendPinDto.cs  (287 B)
+|   |   |   |-- ResetPasswordDto.cs  (480 B)
+|   |   |   |-- RotaDto.cs  (382 B)
+|   |   |   |-- SeedAdminDto.cs  (387 B)
+|   |   |   |-- SeedResultDto.cs  (303 B)
+|   |   |   |-- ValidatePinDto.cs  (151 B)
+|   |   |   |-- VerifyPinDto.cs  (395 B)
+|   |   |   +-- VerifyPinRequestDto.cs  (436 B)
+|   |   |-- CommonDto/
+|   |   |   |-- AuthResponseDto.cs  (356 B)
+|   |   |   |-- BoolWrapperDto.cs  (5,1 KB)
+|   |   |   |-- CachedItemDto.cs  (452 B)
+|   |   |   |-- ChangePasswordDto.cs  (360 B)
+|   |   |   |-- OfflineOperationDto.cs  (691 B)
+|   |   |   +-- OperationResponseDto.cs  (346 B)
+|   |   |-- TableDto/
+|   |   |   |-- BairroRequestDto.cs  (231 B)
+|   |   |   |-- BairroResponseDto.cs  (215 B)
+|   |   |   |-- PessoaEmailRequestDto.cs  (650 B)
+|   |   |   |-- PessoaEmailResponseDto.cs  (422 B)
+|   |   |   |-- PessoaRequestDto.cs  (2,1 KB)
+|   |   |   +-- PessoaResponseDto.cs  (1,3 KB)
+|   |   +-- UserDto/
+|   |       |-- ChangePasswordRequestDto.cs  (353 B)
+|   |       |-- UpdateUserDto.cs  (244 B)
+|   |       |-- UserProfileDto.cs  (768 B)
+|   |       +-- UserProfileResponseDto.cs  (378 B)
+|   |-- Tbl/
+|   |   |-- MaxLengthAttribute.cs  (108 B)
+|   |   |-- TblBairro.cs  (195 B)
+|   |   |-- TblBase.cs  (428 B)
+|   |   |-- TblCep.cs  (568 B)
+|   |   |-- TblCidade.cs  (195 B)
+|   |   |-- TblEstado.cs  (252 B)
+|   |   |-- TblLogradouro.cs  (203 B)
+|   |   |-- TblParametro.cs  (383 B)
+|   |   +-- TblPessoa.cs  (6,0 KB)
+|   +-- Uvw/
+|       |-- UvwBairro.cs  (194 B)
+|       |-- UvwCep.cs  (869 B)
+|       |-- UvwCidade.cs  (194 B)
+|       |-- UvwEstado.cs  (250 B)
+|       |-- UvwLogradouro.cs  (203 B)
+|       |-- UvwParametro.cs  (383 B)
+|       |-- UvwPessoa.cs  (1,4 KB)
+|       |-- UvwPessoaEmail.cs  (422 B)
+|       |-- UvwPessoaFisica.cs  (755 B)
+|       +-- UvwPessoaJuridica.cs  (776 B)
+|-- obj/  [skipped]
++-- CanindePwaShared.csproj  (783 B)
+
+======================================================================
+ PROJECT: CanindeWebServer
+ Path:    C:\Desenvolvimento\VisualStudio\CanindePwaSolution\CanindeWebServer
+======================================================================
+CanindeWebServer/
+|-- Backup/
+|-- bin/  [skipped]
+|-- Configuration/
+|   +-- RegistryConfiguration.cs  (6,5 KB)
+|-- Controllers/
+|   |-- AuthController.cs  (40,5 KB)
+|   |-- GenericCrudController.cs  (10,7 KB)
+|   |-- MenuController.cs  (1,4 KB)
+|   |-- PessoaController.cs  (4,2 KB)
+|   |-- PessoaEmailController.cs  (2,0 KB)
+|   +-- UsersController.cs  (2,4 KB)
+|-- Data/
+|   +-- ProjetoDbContext.cs  (11,8 KB)
+|-- Middleware/
+|   |-- Reports/
+|   |   +-- PedidoVenda/
+|   |       +-- 2025/
+|   |           +-- 11/
+|   |               +-- 005001.pdf  (56,0 KB)
+|   +-- AuthConsistencyMiddleware.cs  (2,6 KB)
+|-- obj/  [skipped]
+|-- Properties/
+|   +-- launchSettings.json  (485 B)
+|-- Repositories/
+|   |-- IUserRepository.cs  (466 B)
+|   +-- UserRepository.cs  (1,5 KB)
+|-- Services/
+|   |-- Health/
+|   |   +-- EmailServiceHealthCheck.cs  (1,9 KB)
+|   |-- Reports/
+|   |-- Utils/
+|   |   |-- CpfCnpjValidator.cs  (2,2 KB)
+|   |   |-- FormatUtils.cs  (2,1 KB)
+|   |   |-- PdfReportBuilder.cs  (4,8 KB)
+|   |   +-- UtilizarEnum.cs  (346 B)
+|   |-- AdminSeedService.cs  (4,8 KB)
+|   |-- AuthService.cs  (10,6 KB)
+|   |-- CepLookupService.cs  (6,0 KB)
+|   |-- EmailService.cs  (7,4 KB)
+|   |-- GenericCrudService.cs  (7,3 KB)
+|   |-- IAdminSeedService.cs  (3,3 KB)
+|   |-- IAuthService.cs  (1,1 KB)
+|   |-- ICepLookupService.cs  (484 B)
+|   |-- IEmailService.cs  (936 B)
+|   |-- IMenuService.cs  (445 B)
+|   |-- IPasswordHasher.cs  (678 B)
+|   |-- IPessoaEmailService.cs  (449 B)
+|   |-- IPessoaService.cs  (438 B)
+|   |-- IPinConfigurationService.cs  (290 B)
+|   |-- ITempPasswordService.cs  (238 B)
+|   |-- MenuService.cs  (2,3 KB)
+|   |-- PasswordHasherService.cs  (2,2 KB)
+|   |-- PessoaEmailService.cs  (4,6 KB)
+|   |-- PessoaService.cs  (17,8 KB)
+|   |-- PinConfigurationService.cs  (1,6 KB)
+|   +-- TempPasswordService.cs  (1,9 KB)
+|-- Swagger/
+|   +-- GenericCrudSwaggerOperationFilter.cs  (2,4 KB)
+|-- appsettings.json  (527 B)
+|-- CanindeWebServer.csproj  (2,1 KB)
+|-- cookies.txt  (135 B)
+|-- erroClient  (7,8 KB)
+|-- erroServer  (0 B)
+|-- Program.cs  (52,5 KB)
++-- startup-crash.log  (44,2 KB)
+
+======================================================================
+ SUMMARY
+======================================================================
+  Solutions:       1
+  Projects:        3
+  .cs files:       125
+  .razor/.cshtml:  15
+  .js/.ts files:   10
+  .sql files:      0
+======================================================================

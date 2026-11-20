@@ -1,0 +1,21 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/publico/solicitacao"
+  to = "/.netlify/functions/solicitacao"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/falcao/pull"
+  to = "/.netlify/functions/pull"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/falcao/mark-imported"
+  to = "/.netlify/functions/mark-imported"
+  status = 200
+  force = true
