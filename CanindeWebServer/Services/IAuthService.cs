@@ -16,6 +16,12 @@ namespace CanindeWebServer.Services
         Task SaveEmailConfirmationTokenAsync(int userId, string token, DateTime expiresAt, string createdByIp);
         Task<RefreshToken?> GetEmailConfirmationTokenAsync(string tokenHash);
         Task SaveResetPasswordTokenAsync(int userId, string token, DateTime expiresAt, string createdByIp);
+
+        // Recuperacao de senha: token vigente (nao revogado, nao expirado), data do ultimo pedido
+        // (para o intervalo minimo entre pedidos) e revogacao em lote por finalidade.
+        Task<RefreshToken?> GetResetPasswordTokenAsync(string tokenHash);
+        Task<DateTime?> GetLastResetPasswordRequestAtAsync(int userId);
+        Task RevokeUserTokensAsync(int userId, string purpose);
         Task<CadastroUsuarioResponseDto> CadastroUsuarioUserAsync(CadastroUsuarioDto dto);
     }
-}
+}

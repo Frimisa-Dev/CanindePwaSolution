@@ -9,7 +9,7 @@
    no menu, digitar a URL também não abre a página.
 
    - Rotas livres (sempre abrem): /, /login, /validarpin,
-     /recuperar-acesso, /dashboard
+     /recuperar-acesso, /redefinir-senha, /dashboard
    - Anônimo: não é tratado aqui; o AuthorizeRouteView decide
      (páginas com [Authorize] mostram "Acesso Negado/Login")
    - FALHA FECHADA: se o menu não carregar, nega
@@ -92,6 +92,7 @@ else
         "/login",
         "/validarpin",
         "/recuperar-acesso",
+        "/redefinir-senha",
         "/dashboard"
     };
 

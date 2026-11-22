@@ -151,17 +151,21 @@ namespace CanindePwaClient.Services
         // ======================
         // METODOS ESPECIFICOS
         // ======================
-        public async Task<bool> RequestPasswordRecoveryAsync(string email)
+        // Passo 1 da recuperacao de senha. A rota do servidor e "forgotpassword" (sem hifen; antes
+        // o cliente chamava "forgot-password", dava 404 e a tela sempre dizia "erro no envio").
+        // Devolve status e corpo para a tela separar "limite de pedidos" (429) de "sem conexao" (0).
+        public Task<ApiCallResultService<object>> RequestPasswordRecoveryAsync(string email)
         {
-            try
-            {
-                var payload = new { email = email.Trim() };
-                return await PostAsync<object, object>("api/auth/forgot-password", payload) != null;
-            }
-            catch
-            {
-                return false;
-            }
+            return PostWithStatusAsync<ForgotPasswordDto, object>(
+                "api/auth/forgotpassword",
+                new ForgotPasswordDto { Email = email.Trim() });
+        }
+
+        // Passo 2: troca a senha com o token do link. Status e corpo voltam tambem em 400.
+        public Task<ApiCallResultService<ResetPasswordResponseDto>> ResetPasswordAsync(ResetPasswordDto dto)
+        {
+            return PostWithStatusAsync<ResetPasswordDto, ResetPasswordResponseDto>(
+                "api/auth/resetpassword", dto);
         }
     }
 }

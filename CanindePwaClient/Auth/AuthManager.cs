@@ -29,18 +29,37 @@ namespace CanindePwaClient.Auth
         // ============================
         public async Task<LoginResponseDto> LoginAsync(LoginDto dto)
         {
-            var response = await _apiService.PostAsync<LoginDto, LoginResponseDto>(
+            // PostWithStatusAsync: preciso do status HTTP para separar "credenciais invalidas" (401),
+            // "muitas tentativas" (429) e "sem conexao" (0). O PostAsync comum devolve null em todos.
+            var result = await _apiService.PostWithStatusAsync<LoginDto, LoginResponseDto>(
                 "api/auth/login", dto);
 
-            if (response?.Success == true && !response.RequiresPin)
+            var response = result.Body;
+
+            if (response?.Success == true)
             {
-                await RevalidateAndReloadAsync();
+                if (!response.RequiresPin)
+                {
+                    await RevalidateAndReloadAsync();
+                }
+
+                return response;
             }
 
-            return response ?? new LoginResponseDto
+            // Falhas: mensagens fixas (o servidor nao revela se o e-mail existe).
+            var mensagem = result.StatusCode switch
+            {
+                0 => "Erro de conexão com o sistema. Verifique sua internet.",
+                // policy Login (Program.cs): 10 tentativas por IP a cada 5 min. Se mudar la, ajuste aqui.
+                429 => "Muitas tentativas de acesso. Aguarde até 5 minutos e tente novamente.",
+                >= 500 => "Sistema indisponível no momento. Tente novamente em instantes.",
+                _ => "Credenciais inválidas."
+            };
+
+            return new LoginResponseDto
             {
                 Success = false,
-                Message = "Erro de conexão"
+                Message = mensagem
             };
         }
 
@@ -151,4 +170,4 @@ namespace CanindePwaClient.Auth
             await _userContext.LoadAsync();
         }
     }
-}
+}

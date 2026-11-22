@@ -169,8 +169,11 @@
                 return;   // sem este return, caia no "Credenciais invalidas" logo apos navegar
             }
 
-            // ERROS - MENSAGEM PADRÃO SEGURANÇA
-            errorMessage = "Credenciais inválidas.";
+            // ERROS - mensagem vinda do AuthManager (fixa por tipo de falha: credenciais
+            // inválidas, muitas tentativas, sem conexão); nunca revela se o e-mail existe.
+            errorMessage = string.IsNullOrWhiteSpace(result.Message)
+                ? "Credenciais inválidas."
+                : result.Message;
         }
         catch (HttpRequestException httpEx) when (httpEx.StatusCode == HttpStatusCode.Unauthorized)
         {
@@ -210,4 +213,4 @@
         [MinLength(6, ErrorMessage = "Senha deve ter no mínimo 6 caracteres")]
         public string Password { get; set; } = string.Empty;
     }
-}
+}

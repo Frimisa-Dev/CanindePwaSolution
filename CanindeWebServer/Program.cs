@@ -594,6 +594,21 @@ Impacto:
 - Estabilidade
 - Performance
 ===============================================================================
+
+-------------------------------------------------------------------------------
+LIMITE DE TENTATIVAS POR IP (AddRateLimiter) — janela fixa, sem fila
+-------------------------------------------------------------------------------
+Policies (aplicadas com [EnableRateLimiting("...")] no AuthController):
+- SolicitacaoPublica : 5 por 10 min   (solicitações da área pública)
+- Login              : 10 por 5 min   (freia força bruta de senha)
+- RecuperacaoSenha   : 5 por 10 min   (pedido do link "esqueci minha senha")
+- RedefinicaoSenha   : 10 por 10 min  (senha nova com o token; senha fraca exige retentativas)
+
+Acima do limite: HTTP 429. O cliente não repete o 429 (WasmRetryHandler) e mostra
+"aguarde alguns minutos".
+Atenção: o IP é Connection.RemoteIpAddress. Se um dia houver proxy reverso na frente,
+é preciso UseForwardedHeaders, senão todos os usuários caem no mesmo IP.
+-------------------------------------------------------------------------------
 */
 
 builder.Services.AddRateLimiter(options =>
@@ -605,6 +620,39 @@ builder.Services.AddRateLimiter(options =>
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(10),
+                QueueLimit = 0
+            }));
+
+    // Login: 10 tentativas por IP a cada 5 minutos (freia força bruta de senha)
+    options.AddPolicy("Login", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "anon",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(5),
+                QueueLimit = 0
+            }));
+
+    // Pedido do link de "esqueci minha senha": 5 por IP a cada 10 minutos
+    options.AddPolicy("RecuperacaoSenha", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "anon",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(10),
+                QueueLimit = 0
+            }));
+
+    // Redefinição com o token: 10 por IP a cada 10 minutos (senha fraca exige novas tentativas)
+    options.AddPolicy("RedefinicaoSenha", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "anon",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
                 Window = TimeSpan.FromMinutes(10),
                 QueueLimit = 0
             }));
@@ -1247,6 +1295,7 @@ app.Use(async (context, next) =>
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
     context.Response.Headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()";
     context.Response.Headers["X-Correlation-ID"] = Guid.NewGuid().ToString();
+    context.Response.Headers["Cache-Control"] = "no-store";
 
     if (context.Request.Path.StartsWithSegments("/browserLinkSignalR", StringComparison.OrdinalIgnoreCase))
     {
@@ -1255,6 +1304,11 @@ app.Use(async (context, next) =>
     }
     await next();
 });
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();   // navegador só aceita HTTPS neste site depois da primeira visita
+}
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
@@ -1296,8 +1350,8 @@ app.MapHealthChecks("/health", new HealthCheckOptions
             status = report.Status.ToString(),
             timestamp = DateTime.UtcNow,
             environment = app.Environment.EnvironmentName,
-            configSource = builder.Configuration["Registry:Source"] ?? "Unknown",
-            registryPath = builder.Configuration["Registry:Path"] ?? "Not configured",
+            configSource = app.Environment.IsDevelopment() ? (builder.Configuration["Registry:Source"] ?? "Unknown") : null,
+            registryPath = app.Environment.IsDevelopment() ? (builder.Configuration["Registry:Path"] ?? "Not configured") : null,
             checks = report.Entries.Select(e => new
             {
                 name = e.Key,

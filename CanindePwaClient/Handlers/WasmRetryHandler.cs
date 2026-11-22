@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 
 namespace CanindePwaClient.Handlers
 {
@@ -63,7 +63,10 @@ namespace CanindePwaClient.Handlers
         /// </summary>
         private static bool IsBusinessError(HttpStatusCode statusCode)
         {
+            // 429 (limite de tentativas) NAO e repetido: repetir dentro da janela so atrasa a resposta
+            // e consome o limite. A tela mostra "aguarde alguns minutos".
             return statusCode == HttpStatusCode.BadRequest ||
+                   statusCode == HttpStatusCode.TooManyRequests ||
                    statusCode == HttpStatusCode.Unauthorized ||
                    statusCode == HttpStatusCode.NotFound ||
                    statusCode == HttpStatusCode.Forbidden ||
@@ -76,7 +79,6 @@ namespace CanindePwaClient.Handlers
         private static bool ShouldRetry(HttpStatusCode statusCode)
         {
             return statusCode == HttpStatusCode.RequestTimeout ||
-                   statusCode == HttpStatusCode.TooManyRequests ||
                    statusCode == HttpStatusCode.InternalServerError ||
                    statusCode == HttpStatusCode.BadGateway ||
                    statusCode == HttpStatusCode.ServiceUnavailable ||
@@ -97,4 +99,4 @@ namespace CanindePwaClient.Handlers
             };
         }
     }
-}
+}

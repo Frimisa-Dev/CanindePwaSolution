@@ -212,6 +212,59 @@ namespace CanindeWebServer.Services
             await _db.SaveChangesAsync();
         }
 
+        // ===============================================================
+        // RECUPERACAO DE SENHA
+        // ===============================================================
+
+        /// <summary>
+        /// Token de redefinicao VIGENTE: finalidade PasswordReset, nao revogado e nao expirado.
+        /// Devolve a entidade rastreada (o controller marca RevokedAt e grava junto com a senha nova).
+        /// </summary>
+        public async Task<RefreshToken?> GetResetPasswordTokenAsync(string tokenHash)
+        {
+            var agora = DateTime.UtcNow;
+
+            return await _db.RefreshTokens
+                .FirstOrDefaultAsync(rt =>
+                    rt.TokenHash == tokenHash &&
+                    rt.Purpose == "PasswordReset" &&
+                    rt.RevokedAt == null &&
+                    rt.ExpiresAt > agora);
+        }
+
+        /// <summary>
+        /// Quando o usuario pediu a redefinicao pela ultima vez (conta tokens revogados tambem),
+        /// para impor o intervalo minimo entre pedidos.
+        /// </summary>
+        public async Task<DateTime?> GetLastResetPasswordRequestAtAsync(int userId)
+        {
+            return await _db.RefreshTokens
+                .Where(rt => rt.UserId == userId && rt.Purpose == "PasswordReset")
+                .OrderByDescending(rt => rt.CreatedAt)
+                .Select(rt => (DateTime?)rt.CreatedAt)
+                .FirstOrDefaultAsync();
+        }
+
+        /// <summary>
+        /// Revoga todos os tokens ainda ativos do usuario de uma finalidade
+        /// ("PasswordReset" = links anteriores; "Authentication" = sessoes de refresh).
+        /// </summary>
+        public async Task RevokeUserTokensAsync(int userId, string purpose)
+        {
+            var tokens = await _db.RefreshTokens
+                .Where(rt => rt.UserId == userId && rt.Purpose == purpose && rt.RevokedAt == null)
+                .ToListAsync();
+
+            if (tokens.Count == 0)
+                return;
+
+            var agora = DateTime.UtcNow;
+            foreach (var token in tokens)
+                token.RevokedAt = agora;
+
+            await _db.SaveChangesAsync();
+        }
+
         private static string ToSha256(string input)
         {
             using var sha = SHA256.Create();

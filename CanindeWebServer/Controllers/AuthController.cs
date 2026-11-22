@@ -9,7 +9,9 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Concurrent;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -32,8 +34,16 @@ namespace CanindeWebServer.Controllers
         private readonly ILogger<AuthController> _logger;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IPinConfigurationService _pinConfigService;
+        private readonly IServiceScopeFactory _scopeFactory;
 
         private static readonly SemaphoreSlim _registerLock = new SemaphoreSlim(1, 1);
+
+        // Serializa a redefinicao de senha: o token vale UMA vez, mesmo com dois pedidos simultaneos.
+        private static readonly SemaphoreSlim _resetLock = new SemaphoreSlim(1, 1);
+
+        // Mesma resposta do forgotpassword para qualquer e-mail (nao revela quem e usuario).
+        private const string MensagemRecuperacaoPadrao =
+            "Se o e-mail estiver cadastrado, você receberá as instruções em instantes.";
 
         // Tentativas erradas de PIN por usuário (só em memória; zera ao trocar o PIN, ao ativar ou ao reiniciar).
         private const int MaxTentativasPin = 5;
@@ -47,7 +57,8 @@ namespace CanindeWebServer.Controllers
             ITempPasswordService tempPasswordService,
             ILogger<AuthController> logger,
             IPasswordHasher passwordHasher,
-            IPinConfigurationService pinConfigService)
+            IPinConfigurationService pinConfigService,
+            IServiceScopeFactory scopeFactory)
         {
             _auth = auth;
             _db = db;
@@ -57,6 +68,7 @@ namespace CanindeWebServer.Controllers
             _logger = logger;
             _passwordHasher = passwordHasher;
             _pinConfigService = pinConfigService;
+            _scopeFactory = scopeFactory;
         }
 
         // ============================================
@@ -67,6 +79,7 @@ namespace CanindeWebServer.Controllers
         /// Login principal - usa cookies HTTPOnly (SEGURANCA BANCARIA)
         /// </summary>
         [AllowAnonymous]
+        [EnableRateLimiting("Login")] // 10 tentativas por IP / 5 min (policy em Program.cs)
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto request)
         {
@@ -644,44 +657,162 @@ namespace CanindeWebServer.Controllers
         }
 
         /// <summary>
-        /// Recuperacao de senha
+        /// Recuperacao de senha - PASSO 1: pede o link de redefinicao por e-mail.
+        /// - RESPOSTA SEMPRE IGUAL (exista o e-mail ou nao): nao revela quem e usuario.
+        /// - So usuario ATIVO e nao bloqueado recebe o e-mail; quem esta pendente de PIN segue pelo fluxo do PIN.
+        /// - Intervalo minimo entre pedidos (PinResendCooldownMinutes); novo pedido invalida os links anteriores.
+        /// - Validade = mesma do PIN (PinExpirationMinutes, padrao 30 min).
+        /// - O link usa SiteBaseUrl (configuracao), NUNCA o Host da requisicao (evita link envenenado),
+        ///   com o token no FRAGMENTO (#token=...), que nao vai para logs do servidor nem para o Referer.
+        /// - O e-mail sai em segundo plano: o tempo de resposta nao denuncia se o e-mail existe.
         /// </summary>
         [AllowAnonymous]
+        [EnableRateLimiting("RecuperacaoSenha")] // 5 pedidos por IP / 10 min (policy em Program.cs)
         [HttpPost("forgotpassword")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
         {
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
-            if (user == null)
-                return Ok(new { message = "Se o email existir, voce recebera instrucoes." });
-
-            var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-            var expires = DateTime.UtcNow.AddHours(1);
-
-            await _auth.SaveResetPasswordTokenAsync(
-                user.Id,
-                token,
-                expires,
-                GetClientIp()  // Adicionar este parametro
-            );
-
-            var resetLink = $"{Request.Scheme}://{Request.Host}/reset-password?token={token}&email={dto.Email}";
-
-            await _email.SendAsync(
-                dto.Email,
-                "Recuperacao de Senha - Caninde",
-                $"""
-                <p>Ola {user.Username},</p>
-                <p>Clique no link abaixo para redefinir sua senha:</p>
-                <p><a href="{resetLink}">Redefinir Senha</a></p>
-                <p>Este link expira em 1 hora.</p>
-                """
-            );
-
-            return Ok(new
+            try
             {
-                success = true,
-                message = "Instrucoes enviadas para seu email."
-            });
+                var email = dto.Email.Trim();
+                var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+                // Desconhecido, pendente de PIN ou bloqueado: mesma resposta, nada e enviado.
+                if (user == null || !user.IsActive || user.IsLocked)
+                    return Ok(new { success = true, message = MensagemRecuperacaoPadrao });
+
+                // Intervalo minimo entre pedidos (conta tambem links ja revogados).
+                var cooldownMinutos = await _pinConfigService.GetPinResendCooldownMinutes();
+                var ultimoPedido = await _auth.GetLastResetPasswordRequestAtAsync(user.Id);
+
+                if (ultimoPedido.HasValue &&
+                    DateTime.UtcNow - ultimoPedido.Value < TimeSpan.FromMinutes(cooldownMinutos))
+                    return Ok(new { success = true, message = MensagemRecuperacaoPadrao });
+
+                var siteBase = ObterSiteBaseUrl();
+                if (siteBase == null)
+                {
+                    _logger.LogError("[FORGOTPASSWORD] SiteBaseUrl ausente ou nao HTTPS: e-mail de redefinicao NAO enviado.");
+                    return Ok(new { success = true, message = MensagemRecuperacaoPadrao });
+                }
+
+                // Links anteriores deixam de valer; so o mais novo funciona.
+                await _auth.RevokeUserTokensAsync(user.Id, "PasswordReset");
+
+                // 256 bits aleatorios em Base64Url (43 caracteres, seguro para URL).
+                // No banco fica so o hash SHA-256 do token.
+                var token = Microsoft.AspNetCore.WebUtilities.Base64UrlTextEncoder.Encode(RandomNumberGenerator.GetBytes(32));
+                var expiresAt = await _pinConfigService.CalculatePinExpiration();
+
+                await _auth.SaveResetPasswordTokenAsync(user.Id, token, expiresAt, GetClientIp());
+
+                var minutos = await _pinConfigService.GetPinExpirationMinutes();
+                var link = $"{siteBase}/redefinir-senha#token={Uri.EscapeDataString(token)}";
+
+                var pedidoEm = FormatarDataHoraLocal(DateTime.UtcNow);
+                var pedidoIp = System.Net.WebUtility.HtmlEncode(GetClientIp());
+
+                var html = $"""
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #2b5cd8;">Olá {System.Net.WebUtility.HtmlEncode(user.Username)}!</h2>
+                        <p>Recebemos um pedido para redefinir a senha da sua conta.</p>
+                        <p>
+                            <a href="{link}" style="display: inline-block; background: #2b5cd8; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none;">
+                                Redefinir senha
+                            </a>
+                        </p>
+                        <p>Se o botão não funcionar, copie e cole este endereço no navegador:<br>{link}</p>
+                        <p>Este link expira em {minutos} minutos e só pode ser usado uma vez.</p>
+                        <p style="color: #666; font-size: 12px;">
+                            Pedido feito em {pedidoEm} a partir do IP {pedidoIp}.<br>
+                            Se você não pediu a redefinição, ignore este e-mail: sua senha continua a mesma.
+                        </p>
+                    </div>
+                    """;
+
+                EnviarEmailEmSegundoPlano(user.Email, "Redefinição de senha - Caninde", html);
+            }
+            catch (Exception ex)
+            {
+                // Erro interno NAO muda a resposta (um 500 so para e-mails existentes revelaria o cadastro).
+                _logger.LogError(ex, "[FORGOTPASSWORD] Erro ao processar solicitacao");
+            }
+
+            return Ok(new { success = true, message = MensagemRecuperacaoPadrao });
+        }
+
+        /// <summary>
+        /// Recuperacao de senha - PASSO 2: recebe o token do link + a senha nova.
+        /// - O token vale UMA vez e expira; o servidor compara o HASH (nunca guarda o token).
+        /// - Senha fora das regras: 400 com a lista de erros e o token CONTINUA valido para nova tentativa.
+        /// - Sucesso: grava a senha nova e consome o token numa unica gravacao, depois cancela os
+        ///   outros links pendentes e as sessoes de refresh do usuario.
+        /// - Nao entra automaticamente: a pessoa vai para o login.
+        /// - Limite: o cookie de sessao ja emitido (15 min) nao e revogavel no servidor; expira sozinho.
+        /// </summary>
+        [AllowAnonymous]
+        [EnableRateLimiting("RedefinicaoSenha")] // 10 tentativas por IP / 10 min (policy em Program.cs)
+        [HttpPost("resetpassword")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            await _resetLock.WaitAsync();
+            try
+            {
+                var tokenHash = ToSha256(dto.Token.Trim());
+                var stored = await _auth.GetResetPasswordTokenAsync(tokenHash);
+
+                // Mesma mensagem para token inexistente, expirado, usado ou de conta que nao pode redefinir.
+                var user = stored == null ? null : await _db.Users.FindAsync(stored.UserId);
+
+                if (stored == null || user == null || !user.IsActive || user.IsLocked)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Link inválido ou expirado. Solicite um novo link.",
+                        invalidToken = true
+                    });
+                }
+
+                var erros = ValidarNovaSenha(dto.NewPassword, dto.ConfirmPassword, user.PasswordHash);
+                if (erros.Count > 0)
+                {
+                    // Token NAO e consumido: a pessoa corrige a senha e tenta de novo.
+                    return BadRequest(new { success = false, message = "Senha nova inválida.", errors = erros });
+                }
+
+                // Uma unica gravacao: senha nova + token consumido.
+                user.PasswordHash = _passwordHasher.HashPassword(dto.NewPassword);
+                stored.RevokedAt = DateTime.UtcNow;
+                await _db.SaveChangesAsync();
+
+                // Depois da troca: outros links pendentes e sessoes de refresh deixam de valer.
+                await _auth.RevokeUserTokensAsync(user.Id, "PasswordReset");
+                await _auth.RevokeUserTokensAsync(user.Id, "Authentication");
+
+                _logger.LogInformation("[RESETPASSWORD] Senha redefinida para o usuario {UserId}", user.Id);
+
+                // Se o token foi roubado, o dono da conta fica sabendo na hora.
+                EnviarAvisoSenhaAlteradaEmSegundoPlano(user);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Senha redefinida com sucesso. Faça login com a nova senha."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[RESETPASSWORD] Erro ao redefinir senha");
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Erro interno ao redefinir a senha."
+                });
+            }
+            finally
+            {
+                _resetLock.Release();
+            }
         }
 
         /// <summary>
@@ -1074,6 +1205,89 @@ namespace CanindeWebServer.Controllers
                 """);
         }
 
+        /// <summary>
+        /// URL do site (chave SiteBaseUrl do Registry, gravada pelo Start-Dev), sem barra final.
+        /// Precisa ser absoluta e HTTPS; senao devolve null e o link NAO e enviado.
+        /// </summary>
+        private string? ObterSiteBaseUrl()
+        {
+            var url = _cfg["SiteBaseUrl"]?.Trim();
+
+            if (string.IsNullOrWhiteSpace(url) ||
+                !Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+                uri.Scheme != Uri.UriSchemeHttps)
+                return null;
+
+            return url.TrimEnd('/');
+        }
+
+        /// <summary>
+        /// Avisa o dono da conta que a senha foi alterada (quando e de qual IP), para ele reagir
+        /// se nao foi ele. Reutilizado pela redefinicao e, depois, pela troca de senha.
+        /// Os dados do usuario e da requisicao sao lidos AGORA (antes do segundo plano).
+        /// </summary>
+        private void EnviarAvisoSenhaAlteradaEmSegundoPlano(User user)
+        {
+            var para = user.Email;
+            var nome = System.Net.WebUtility.HtmlEncode(user.Username);
+            var quando = FormatarDataHoraLocal(DateTime.UtcNow);
+            var ip = System.Net.WebUtility.HtmlEncode(GetClientIp());
+
+            var html = $"""
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #2b5cd8;">Olá {nome}!</h2>
+                    <p>A senha da sua conta foi alterada em <strong>{quando}</strong>, a partir do IP {ip}.</p>
+                    <p>Se foi você, nenhuma ação é necessária.</p>
+                    <p><strong>Se não foi você</strong>, avise o administrador do sistema imediatamente.</p>
+                </div>
+                """;
+
+            EnviarEmailEmSegundoPlano(para, "Sua senha foi alterada - Caninde", html);
+        }
+
+        /// <summary>
+        /// Data/hora para exibir em e-mails, no horario de Brasilia (Windows ou Linux).
+        /// Se o fuso nao existir na maquina, mostra em UTC e diz isso no texto.
+        /// </summary>
+        private static string FormatarDataHoraLocal(DateTime utc)
+        {
+            var momento = DateTime.SpecifyKind(utc, DateTimeKind.Utc);
+
+            foreach (var id in new[] { "E. South America Standard Time", "America/Sao_Paulo" })
+            {
+                try
+                {
+                    var fuso = TimeZoneInfo.FindSystemTimeZoneById(id);
+                    return TimeZoneInfo.ConvertTimeFromUtc(momento, fuso).ToString("dd/MM/yyyy HH:mm") + " (horário de Brasília)";
+                }
+                catch (TimeZoneNotFoundException) { }
+                catch (InvalidTimeZoneException) { }
+            }
+
+            return momento.ToString("dd/MM/yyyy HH:mm") + " (UTC)";
+        }
+
+        /// <summary>
+        /// Envia o e-mail depois de responder a requisicao (escopo proprio: o DbContext da requisicao
+        /// ja foi descartado). Falha so vai para o log.
+        /// </summary>
+        private void EnviarEmailEmSegundoPlano(string para, string assunto, string html)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    using var scope = _scopeFactory.CreateScope();
+                    var email = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                    await email.SendAsync(para, assunto, html);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[EMAIL] Falha ao enviar e-mail em segundo plano: {Assunto}", assunto);
+                }
+            });
+        }
+
         private string GetClientIp()
         {
             return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "0.0.0.0";
@@ -1106,12 +1320,9 @@ namespace CanindeWebServer.Controllers
                 status = "healthy",
                 timestamp = DateTime.UtcNow,
                 https = HttpContext.Request.IsHttps,
-                database = dbConnected ? "connected" : "disconnected",
-                environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development",
-                server = Environment.MachineName,
-                cookiesEnabled = Request.Cookies.Any()
+                database = dbConnected ? "connected" : "disconnected"
             });
         }
 
     }
-}
+}

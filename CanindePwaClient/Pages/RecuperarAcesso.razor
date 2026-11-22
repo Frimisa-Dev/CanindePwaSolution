@@ -1,4 +1,4 @@
-﻿@page "/recuperar-acesso"
+@page "/recuperar-acesso"
 @using CanindePwaClient.Components
 @inject IApiService ApiService
 @inject NavigationManager NavigationManager
@@ -55,9 +55,9 @@
                             {
                                 @if (isSuccess)
                                 {
+                                    @* Sem fechamento automatico: a pessoa precisa ler as instrucoes *@
                                     <MensagemPadrao Texto="@message" 
-                                                   Tipo="@TipoMensagemEnum.Sucesso" 
-                                                   AutoCloseSeconds="5" />
+                                                   Tipo="@TipoMensagemEnum.Sucesso" />
                                 }
                                 else
                                 {
@@ -127,17 +127,29 @@
 
         try
         {
-            var ok = await ApiService.RequestPasswordRecoveryAsync(recoverModel.Email);
+            var resultado = await ApiService.RequestPasswordRecoveryAsync(recoverModel.Email);
             
-            if (ok)
+            if (resultado.IsSuccess)
             {
+                // O servidor responde IGUAL exista o e-mail ou nao (nao revela quem e usuario),
+                // entao a tela tambem nao pode afirmar que o e-mail foi enviado.
                 isSuccess = true;
-                message = "Link de recuperação enviado para seu e-mail!";
+                message = "Se o e-mail estiver cadastrado, você receberá as instruções em instantes. " +
+                          "O link tem validade limitada e só pode ser usado uma vez. " +
+                          "Não chegou? Aguarde alguns minutos antes de pedir outro.";
                 recoverModel.Email = string.Empty;
             }
             else
             {
-                message = "E-mail não encontrado ou erro no envio.";
+                // Falha: o texto depende do motivo.
+                // 429 = limite do servidor de 5 pedidos por IP a cada 10 min (policy RecuperacaoSenha no
+                // Program.cs). Se a janela mudar la, ajuste o tempo aqui.
+                message = resultado.StatusCode switch
+                {
+                    0 => "Sem conexão com o servidor. Verifique sua internet e tente novamente.",
+                    429 => "Muitos pedidos em pouco tempo. Aguarde até 10 minutos e tente novamente.",
+                    _ => "Não foi possível processar a solicitação. Tente novamente em instantes."
+                };
             }
         }
         catch (Exception ex)
@@ -151,4 +163,4 @@
             StateHasChanged();
         }
     }
-}
+}

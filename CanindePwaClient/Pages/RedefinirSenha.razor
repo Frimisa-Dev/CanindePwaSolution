@@ -1,0 +1,303 @@
+@page "/redefinir-senha"
+@using CanindePwaClient.Components
+@using CanindePwaShared.Enums
+@using CanindePwaShared.Models.Dto.AuthDto
+@using System.ComponentModel.DataAnnotations
+@inject IApiService ApiService
+@inject NavigationManager NavigationManager
+
+@* ============================================================
+   RedefinirSenha.razor  (recuperacao de senha - PASSO 2)
+   ------------------------------------------------------------
+   A pessoa chega pelo link do e-mail:  /redefinir-senha#token=XXXX
+   - O token vem no FRAGMENTO (#), que o navegador nao envia ao
+     servidor nem no Referer. Depois de lido, e retirado da barra
+     de enderecos (sem recarregar a pagina).
+   - Pagina PUBLICA (sem [Authorize]); esta na lista de rotas livres
+     do GuardaRota.
+   - As regras da senha sao validadas SO no servidor (fonte unica);
+     aqui apenas se exibe a lista de erros devolvida por ele.
+   - Senha fora das regras: o token continua valido, a pessoa corrige
+     e tenta de novo. Token invalido/expirado/usado: pede novo link.
+   - Depois de redefinir, vai para o login (nao entra sozinha).
+   ============================================================ *@
+
+<PageTitle>AA Frimisa - Redefinir Senha</PageTitle>
+
+<div class="curio-min-vh-100 curio-bg-gradient-home">
+    <div class="curio-container">
+        <div class="curio-row curio-justify-center curio-align-center curio-min-vh-100">
+            <div class="curio-col-md-8 curio-col-lg-6 curio-col-xl-5">
+                <div class="curio-card">
+                    <div class="curio-card-body curio-p-5">
+
+                        <!-- LOGO -->
+                        <div class="curio-text-center curio-mb-4">
+                            <img src="/images/logo.png"
+                                 alt="AA Frimisa"
+                                 class="curio-logo-image curio-mb-3"
+                                 @onerror="HandleImageError">
+
+                            <!-- PLACEHOLDER DA LOGO (se a imagem não carregar) -->
+                            @if (showLogoPlaceholder)
+                            {
+                                <div class="curio-logo-placeholder">
+                                    <span class="curio-placeholder-icon">🔐</span>
+                                    <div class="curio-placeholder-text">
+                                        <strong>Redefinir Senha</strong>
+                                        <small>AA Frimisa</small>
+                                    </div>
+                                </div>
+                            }
+
+                            <h2 class="curio-card-title">Redefinir Senha</h2>
+                        </div>
+
+                        @if (estado == EstadoTela.Formulario)
+                        {
+                            <p class="curio-card-description curio-text-center curio-mb-4">
+                                Crie a sua nova senha.
+                            </p>
+
+                            <!-- FORMULÁRIO -->
+                            <EditForm Model="modelo" OnValidSubmit="HandleRedefinir">
+                                <DataAnnotationsValidator />
+
+                                <!-- NOVA SENHA -->
+                                <div class="curio-form-group curio-mb-3">
+                                    <label for="novaSenha" class="curio-form-label">Nova senha</label>
+                                    <InputText @bind-Value="modelo.NovaSenha"
+                                               id="novaSenha"
+                                               type="password"
+                                               autocomplete="new-password"
+                                               class="curio-form-control" />
+                                    <ValidationMessage For="@(() => modelo.NovaSenha)" />
+                                </div>
+
+                                <!-- CONFIRMAÇÃO -->
+                                <div class="curio-form-group curio-mb-3">
+                                    <label for="confirmacao" class="curio-form-label">Confirmar nova senha</label>
+                                    <InputText @bind-Value="modelo.Confirmacao"
+                                               id="confirmacao"
+                                               type="password"
+                                               autocomplete="new-password"
+                                               class="curio-form-control" />
+                                    <ValidationMessage For="@(() => modelo.Confirmacao)" />
+                                </div>
+
+                                <p class="curio-text-muted curio-mb-4">
+                                    <small>
+                                        Use de 8 a 64 caracteres, com letra maiúscula, minúscula, número e símbolo.
+                                    </small>
+                                </p>
+
+                                <!-- ERROS DEVOLVIDOS PELO SERVIDOR (regras da senha) -->
+                                @if (erros.Count > 0)
+                                {
+                                    <div class="curio-mb-3">
+                                        <MensagemPadrao Texto="@mensagem" Tipo="@TipoMensagemEnum.Erro" />
+                                        <ul class="curio-text-error curio-mt-2">
+                                            @foreach (var erro in erros)
+                                            {
+                                                <li>@erro</li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                                else if (!string.IsNullOrEmpty(mensagem))
+                                {
+                                    <MensagemPadrao Texto="@mensagem" Tipo="@TipoMensagemEnum.Erro" />
+                                }
+
+                                <!-- BOTÃO -->
+                                <div class="curio-d-grid curio-gap-2 curio-mb-4">
+                                    @if (isProcessing)
+                                    {
+                                        <button class="curio-btn curio-btn-primary curio-btn-lg curio-d-flex curio-align-center curio-justify-center curio-gap-2"
+                                                type="button"
+                                                disabled>
+                                            <span class="curio-spinner-sm curio-border-2"></span>
+                                            <span>Salvando...</span>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="curio-btn curio-btn-primary curio-btn-lg curio-d-flex curio-align-center curio-justify-center curio-gap-2"
+                                                type="submit">
+                                            <i class="bi bi-key"></i>
+                                            <span>Redefinir Senha</span>
+                                        </button>
+                                    }
+                                </div>
+                            </EditForm>
+                        }
+                        else if (estado == EstadoTela.Concluido)
+                        {
+                            <MensagemPadrao Texto="Senha redefinida com sucesso. Faça login com a nova senha."
+                                            Tipo="@TipoMensagemEnum.Sucesso" />
+
+                            <div class="curio-d-grid curio-gap-2 curio-mt-4">
+                                <button class="curio-btn curio-btn-primary curio-btn-lg"
+                                        type="button"
+                                        @onclick="IrParaLogin">
+                                    Ir para o Login
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <MensagemPadrao Texto="@(string.IsNullOrEmpty(mensagem) ? "Link inválido ou expirado. Solicite um novo link." : mensagem)"
+                                            Tipo="@TipoMensagemEnum.Aviso" />
+
+                            <div class="curio-d-grid curio-gap-2 curio-mt-4">
+                                <button class="curio-btn curio-btn-primary curio-btn-lg"
+                                        type="button"
+                                        @onclick="SolicitarNovoLink">
+                                    Solicitar novo link
+                                </button>
+                            </div>
+                        }
+
+                        <!-- VOLTAR -->
+                        <BackButton ButtonText="Voltar ao Login" CustomRoute="/login" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private enum EstadoTela { Formulario, Concluido, LinkInvalido }
+
+    private EstadoTela estado = EstadoTela.LinkInvalido;
+    private RedefinirModel modelo = new();
+    private string? token;
+    private bool veioFragmento;
+    private bool isProcessing;
+    private string mensagem = string.Empty;
+    private List<string> erros = new();
+    private bool showLogoPlaceholder;
+
+    public class RedefinirModel
+    {
+        [Required(ErrorMessage = "Informe a nova senha")]
+        public string NovaSenha { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Confirme a nova senha")]
+        public string Confirmacao { get; set; } = string.Empty;
+    }
+
+    protected override void OnInitialized()
+    {
+        token = LerTokenDoFragmento(NavigationManager.Uri);
+        veioFragmento = !string.IsNullOrWhiteSpace(token);
+        estado = veioFragmento ? EstadoTela.Formulario : EstadoTela.LinkInvalido;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        // Tira o token da barra de endereços (histórico e atalhos) sem recarregar a página.
+        // O token já está guardado no campo "token" desta página.
+        if (firstRender && veioFragmento)
+            NavigationManager.NavigateTo("/redefinir-senha", replace: true);
+    }
+
+    // "#token=abc123"  ->  "abc123"   (null se não houver token)
+    private static string? LerTokenDoFragmento(string uri)
+    {
+        var fragmento = new Uri(uri).Fragment;
+
+        if (string.IsNullOrEmpty(fragmento))
+            return null;
+
+        foreach (var par in fragmento.TrimStart('#').Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var igual = par.IndexOf('=');
+
+            if (igual > 0 && par[..igual] == "token")
+                return Uri.UnescapeDataString(par[(igual + 1)..]);
+        }
+
+        return null;
+    }
+
+    private void HandleImageError()
+    {
+        showLogoPlaceholder = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleRedefinir()
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            estado = EstadoTela.LinkInvalido;
+            return;
+        }
+
+        isProcessing = true;
+        mensagem = string.Empty;
+        erros = new List<string>();
+        StateHasChanged();
+
+        try
+        {
+            var dto = new ResetPasswordDto
+            {
+                Token = token,
+                NewPassword = modelo.NovaSenha,
+                ConfirmPassword = modelo.Confirmacao
+            };
+
+            var resultado = await ApiService.ResetPasswordAsync(dto);
+
+            if (resultado.IsSuccess)
+            {
+                // Token consumido: não guarda mais nada em memória
+                token = null;
+                modelo = new RedefinirModel();
+                estado = EstadoTela.Concluido;
+                return;
+            }
+
+            var corpo = resultado.Body;
+
+            if (corpo?.InvalidToken == true)
+            {
+                // Link inválido, expirado ou já usado: só um novo link resolve
+                token = null;
+                modelo = new RedefinirModel();
+                mensagem = corpo.Message ?? string.Empty;
+                estado = EstadoTela.LinkInvalido;
+                return;
+            }
+
+            // Regras da senha violadas (o token continua válido) ou falha técnica
+            erros = corpo?.Errors ?? new List<string>();
+            mensagem = corpo?.Message
+                ?? (resultado.StatusCode switch
+                {
+                    0 => "Sem conexão com o servidor. Tente novamente.",
+                    429 => "Muitas tentativas. Aguarde até 10 minutos e tente novamente.", // policy RedefinicaoSenha: 10 por 10 min
+                    _ => "Não foi possível redefinir a senha. Tente novamente."
+                });
+        }
+        catch (Exception ex)
+        {
+            mensagem = "Erro ao processar a solicitação. Tente novamente.";
+            Console.WriteLine($"Erro redefinição de senha: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private void IrParaLogin()
+        => NavigationManager.NavigateTo("/login");
+
+    private void SolicitarNovoLink()
+        => NavigationManager.NavigateTo("/recuperar-acesso");
+}
